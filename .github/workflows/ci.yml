@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint (includes module-boundary rules)
+        run: pnpm lint
+      - name: Types
+        run: pnpm typecheck
+
+      - name: Create database roles and databases
+        run: pnpm db:bootstrap
+      - name: Apply migrations
+        run: pnpm db:migrate
+      - name: Fail if any table lacks forced row-level security
+        run: pnpm db:check-rls
+
+      - name: Tests (integration, cross-customer, row-level security)
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+      - name: Install browser
+        run: pnpm --filter @aashi/web exec playwright install --with-deps chromium
+      - name: End-to-end journey
+        run: pnpm e2e

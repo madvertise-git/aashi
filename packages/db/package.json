@@ -1,0 +1,23 @@
+{
+  "name": "@aashi/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "bootstrap": "psql \"${DATABASE_SUPERUSER_URL:-postgres://postgres:postgres@localhost:5432/postgres}\" -v ON_ERROR_STOP=1 -f scripts/bootstrap.sql",
+    "migrate": "tsx scripts/migrate.ts",
+    "check-rls": "tsx scripts/check-rls.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3"
+  }
+}

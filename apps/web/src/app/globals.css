@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* White-label by design: every colour comes from these variables, so an
+   agency's branding is a change of values here, never a change of components. */
+:root {
+  --brand: #0f766e;
+  --brand-strong: #115e59;
+  --brand-contrast: #ffffff;
+  --surface: #ffffff;
+  --canvas: #f6f8f8;
+  --ink: #12282b;
+  --ink-muted: #5b6b6e;
+  --line: #dfe6e6;
+  --danger: #b42318;
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+}
