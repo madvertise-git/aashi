@@ -56,6 +56,16 @@ describe("the OpenAPI contract", () => {
     matches(c.member.array(), await get(`/v1/agencies/${t.agency.id}/members`));
     matches(c.invite.array(), await get(`/v1/agencies/${t.agency.id}/invites`));
     matches(c.page(c.contact), await get(`/v1/accounts/${t.account.id}/contacts`));
+    matches(c.contact, await get(`/v1/accounts/${t.account.id}/contacts/${t.contact.id}`));
+    matches(c.page(c.company), await get(`/v1/accounts/${t.account.id}/companies`));
+    matches(c.company, await get(`/v1/accounts/${t.account.id}/companies/${t.company.id}`));
+    matches(c.tag.array(), await get(`/v1/accounts/${t.account.id}/tags`));
+    matches(c.page(c.note), await get(`/v1/accounts/${t.account.id}/contacts/${t.contact.id}/notes`));
+    matches(c.customField.array(), await get(`/v1/accounts/${t.account.id}/custom-fields`));
+    matches(c.company, t.company);
+    matches(c.tag, t.tag);
+    matches(c.note, t.note);
+    matches(c.customField, t.field);
     matches(c.agency, t.agency);
     matches(c.contact, t.contact);
     matches(c.invite, t.invite);

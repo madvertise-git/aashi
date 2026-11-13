@@ -4,14 +4,14 @@
 import { z } from "zod";
 import * as c from "./index";
 
-type Method = "get" | "post" | "delete";
+type Method = "get" | "post" | "patch" | "put" | "delete";
 
 export interface Operation {
   method: Method;
   /** OpenAPI style, e.g. /v1/accounts/{accountId}/contacts */
   path: string;
   id: string;
-  tag: "Health" | "Sign-in" | "Agencies" | "Team" | "Contacts";
+  tag: "Health" | "Sign-in" | "Agencies" | "Team" | "Contacts" | "Companies" | "Tags" | "Notes" | "Custom fields";
   summary: string;
   /** False for the few routes that work without signing in. */
   auth?: boolean;
@@ -51,8 +51,31 @@ export const operations: Operation[] = [
   { method: "delete", path: "/v1/agencies/{agencyId}/invites/{inviteId}", id: "revokeInvite", tag: "Team", summary: "Cancel an open invite. Admins and owners only.", status: 204, errors: [403, 404] },
   { method: "post", path: "/v1/invites/accept", id: "acceptInvite", tag: "Team", summary: "Join the agency an invite link is for.", body: c.acceptInviteInput, status: 200, response: ["Agency", c.agency], errors: [404], rateLimited: true },
 
-  { method: "get", path: "/v1/accounts/{accountId}/contacts", id: "listContacts", tag: "Contacts", summary: "Contacts in a client account, newest first.", query: c.listQuery, status: 200, response: ["ContactPage", c.page(c.contact)], errors: [404] },
+  { method: "get", path: "/v1/accounts/{accountId}/contacts", id: "listContacts", tag: "Contacts", summary: "Contacts in a client account, newest first. Can be narrowed to a company or a tag.", query: c.contactListQuery, status: 200, response: ["ContactPage", c.page(c.contact)], errors: [404] },
   { method: "post", path: "/v1/accounts/{accountId}/contacts", id: "createContact", tag: "Contacts", summary: "Add a contact. A bare 10-digit Indian mobile number is stored with +91.", body: c.createContactInput, status: 201, response: ["Contact", c.contact], errors: [404, 409] },
+  { method: "get", path: "/v1/accounts/{accountId}/contacts/{contactId}", id: "getContact", tag: "Contacts", summary: "One contact, with its tags and custom field values.", status: 200, response: ["Contact", c.contact], errors: [404] },
+  { method: "patch", path: "/v1/accounts/{accountId}/contacts/{contactId}", id: "updateContact", tag: "Contacts", summary: "Change the fields sent; null clears one. Custom values are merged key by key.", body: c.updateContactInput, status: 200, response: ["Contact", c.contact], errors: [404, 409] },
+  { method: "delete", path: "/v1/accounts/{accountId}/contacts/{contactId}", id: "deleteContact", tag: "Contacts", summary: "Delete a contact with its notes and tag links.", status: 204, errors: [404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/companies", id: "listCompanies", tag: "Companies", summary: "Companies in a client account, newest first.", query: c.listQuery, status: 200, response: ["CompanyPage", c.page(c.company)], errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/companies", id: "createCompany", tag: "Companies", summary: "Add a company.", body: c.createCompanyInput, status: 201, response: ["Company", c.company], errors: [404] },
+  { method: "get", path: "/v1/accounts/{accountId}/companies/{companyId}", id: "getCompany", tag: "Companies", summary: "One company.", status: 200, response: ["Company", c.company], errors: [404] },
+  { method: "patch", path: "/v1/accounts/{accountId}/companies/{companyId}", id: "updateCompany", tag: "Companies", summary: "Change the fields sent; null clears one.", body: c.updateCompanyInput, status: 200, response: ["Company", c.company], errors: [404] },
+  { method: "delete", path: "/v1/accounts/{accountId}/companies/{companyId}", id: "deleteCompany", tag: "Companies", summary: "Delete a company. Its contacts stay, without a company.", status: 204, errors: [404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/tags", id: "listTags", tag: "Tags", summary: "The account's tags, by name.", status: 200, response: list("TagList", c.tag), errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/tags", id: "createTag", tag: "Tags", summary: "Create a tag. Names are unique whatever the capitals.", body: c.createTagInput, status: 201, response: ["Tag", c.tag], errors: [404, 409] },
+  { method: "delete", path: "/v1/accounts/{accountId}/tags/{tagId}", id: "deleteTag", tag: "Tags", summary: "Delete a tag and remove it from every contact.", status: 204, errors: [404] },
+  { method: "put", path: "/v1/accounts/{accountId}/contacts/{contactId}/tags/{tagId}", id: "tagContact", tag: "Tags", summary: "Put a tag on a contact. Doing it twice is harmless.", status: 204, errors: [404] },
+  { method: "delete", path: "/v1/accounts/{accountId}/contacts/{contactId}/tags/{tagId}", id: "untagContact", tag: "Tags", summary: "Take a tag off a contact.", status: 204, errors: [404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/contacts/{contactId}/notes", id: "listNotes", tag: "Notes", summary: "Notes on a contact, newest first.", query: c.listQuery, status: 200, response: ["NotePage", c.page(c.note)], errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/contacts/{contactId}/notes", id: "createNote", tag: "Notes", summary: "Write a note on a contact.", body: c.createNoteInput, status: 201, response: ["Note", c.note], errors: [404] },
+  { method: "delete", path: "/v1/accounts/{accountId}/notes/{noteId}", id: "deleteNote", tag: "Notes", summary: "Delete a note. Its author, or an admin or owner.", status: 204, errors: [403, 404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/custom-fields", id: "listCustomFields", tag: "Custom fields", summary: "The extra fields this account has defined.", status: 200, response: list("CustomFieldList", c.customField), errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/custom-fields", id: "createCustomField", tag: "Custom fields", summary: "Define an extra field for contacts or companies. Admins and owners only.", body: c.createCustomFieldInput, status: 201, response: ["CustomField", c.customField], errors: [403, 404, 409] },
+  { method: "delete", path: "/v1/accounts/{accountId}/custom-fields/{fieldId}", id: "deleteCustomField", tag: "Custom fields", summary: "Remove a field and every value stored for it. Admins and owners only.", status: 204, errors: [403, 404] },
 ];
 
 type Json = Record<string, unknown>;
