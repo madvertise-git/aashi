@@ -2,13 +2,16 @@
 -- in the cloud: infrastructure code does the same with real secrets).
 -- Safe to run again. The passwords here are for local development only.
 --
--- The three roles from the engineering plan, plus one narrow helper:
+-- The three roles from the engineering plan, plus two narrow helpers:
 --   platform_owner      owns the tables and runs migrations. Nothing else.
 --   platform_app        everyday use by the API. Cannot bypass row-level security.
 --   platform_breakglass audited emergencies only. Login stays off until one is declared.
 --   platform_resolver   owns three small look-up functions that must run before a
 --                       tenant is known (sign-in, session check, account access).
 --                       Nobody can log in as it.
+--   platform_auth       used only by the sign-in engine (Better Auth). It can reach the
+--                       sign-in tables (users, sessions, auth_*) and nothing else, and
+--                       cannot bypass row-level security. See ADR 0002.
 
 DO $$
 BEGIN
@@ -17,6 +20,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'platform_app') THEN
     CREATE ROLE platform_app LOGIN PASSWORD 'app_dev_password' NOSUPERUSER NOBYPASSRLS;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'platform_auth') THEN
+    CREATE ROLE platform_auth LOGIN PASSWORD 'auth_dev_password' NOSUPERUSER NOBYPASSRLS;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'platform_breakglass') THEN
     CREATE ROLE platform_breakglass NOLOGIN BYPASSRLS;

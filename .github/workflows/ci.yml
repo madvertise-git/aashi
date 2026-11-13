@@ -24,6 +24,14 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      valkey:
+        image: valkey/valkey:8
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Tests and the end-to-end run use real Redis, as production does.
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

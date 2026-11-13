@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import type { Account, Agency, Contact } from "@aashi/contracts";
 import request from "supertest";
@@ -42,4 +42,18 @@ export async function createTenant(app: INestApplication, label: string): Promis
       .expect(201)
   ).body as Contact;
   return { agent, email, password, agency, account, contact };
+}
+
+/** The code an authenticator app would show right now for this set-up link (RFC 6238, SHA-1, 6 digits, 30 s). */
+export function totpCode(totpUri: string, at = Date.now()): string {
+  const secret = new URL(totpUri).searchParams.get("secret") ?? "";
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const ch of secret.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");
+  const key = Buffer.from((bits.match(/.{8}/g) ?? []).map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
+  const mac = createHmac("sha1", key).update(counter).digest();
+  const offset = mac[mac.length - 1]! & 0xf;
+  return ((mac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).toString().padStart(6, "0");
 }

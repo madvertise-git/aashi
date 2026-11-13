@@ -22,7 +22,7 @@ describe("sign up → agency → client account → contact", () => {
       .expect(201);
     expect(signUp.body).toMatchObject({ email, name: "Priya Sharma" });
     expect(signUp.body.passwordHash).toBeUndefined();
-    expect(String(signUp.headers["set-cookie"])).toMatch(/aashi_session=.*HttpOnly.*SameSite=Lax/);
+    expect(String(signUp.headers["set-cookie"])).toMatch(/aashi\.session_token=.*HttpOnly.*SameSite=Lax/);
 
     expect((await agent.get("/v1/me").expect(200)).body.agencies).toEqual([]);
 
@@ -96,7 +96,8 @@ describe("signing in and out", () => {
     expect(unknown.body).toEqual(wrong.body);
 
     const agent = request.agent(app.getHttpServer());
-    await agent.post("/v1/auth/sign-in").send({ email: email.toUpperCase(), password }).expect(200);
+    const signedIn = await agent.post("/v1/auth/sign-in").send({ email: email.toUpperCase(), password }).expect(200);
+    expect(signedIn.body).toMatchObject({ twoFactorRequired: false, user: { email } });
     await agent.get("/v1/me").expect(200);
     const cookie = (await agent.post("/v1/auth/sign-in").send({ email, password })).headers["set-cookie"];
     await agent.post("/v1/auth/sign-out").expect(204);
