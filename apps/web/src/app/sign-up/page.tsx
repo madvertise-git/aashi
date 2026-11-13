@@ -1,6 +1,6 @@
 "use client";
 
-import { signUpInput, type SignUpInput, type User } from "@aashi/contracts";
+import { signUpInput, type SignUpInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button, Field, FormError } from "@/components/ui";
-import { api, ApiError, nextPath } from "@/lib/api";
+import { client, ApiError, nextPath } from "@/lib/api";
 
 export default function SignUp() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function SignUp() {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      await api<User>("/v1/auth/sign-up", { method: "POST", body: values });
+      await client.POST("/v1/auth/sign-up", { body: values });
       queryClient.clear();
       router.push(nextPath("/onboarding"));
     } catch (error) {

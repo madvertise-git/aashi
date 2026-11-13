@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
 import { Button, Card, Field, FormError } from "@/components/ui";
-import { api } from "@/lib/api";
+import { client } from "@/lib/api";
 import { keys, useMe } from "@/lib/queries";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.");
@@ -24,10 +24,10 @@ function TwoFactor() {
   const submitPassword = passwordForm.handleSubmit(async (values) => {
     try {
       if (enabled) {
-        await api("/v1/auth/two-factor/disable", { method: "POST", body: values });
+        await client.POST("/v1/auth/two-factor/disable", { body: values });
         await queryClient.invalidateQueries({ queryKey: keys.me });
       } else {
-        setSetup(await api<TwoFactorSetup>("/v1/auth/two-factor/enable", { method: "POST", body: values }));
+        setSetup((await client.POST("/v1/auth/two-factor/enable", { body: values })).data!);
       }
       passwordForm.reset();
     } catch (error) {
@@ -37,7 +37,7 @@ function TwoFactor() {
 
   const submitCode = codeForm.handleSubmit(async (values) => {
     try {
-      await api("/v1/auth/two-factor/confirm", { method: "POST", body: values });
+      await client.POST("/v1/auth/two-factor/confirm", { body: values });
       setSetup(null);
       codeForm.reset();
       await queryClient.invalidateQueries({ queryKey: keys.me });

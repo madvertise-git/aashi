@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
-import { api, ApiError } from "@/lib/api";
+import { client, ApiError } from "@/lib/api";
 import { useAccounts, useMe } from "@/lib/queries";
 
 /**
@@ -23,7 +23,7 @@ export function AppShell({ agencyId, accountId, children }: { agencyId?: string;
   }, [signedOut, router]);
 
   async function signOut() {
-    await api("/v1/auth/sign-out", { method: "POST" }).catch(() => undefined);
+    await client.POST("/v1/auth/sign-out").catch(() => undefined);
     queryClient.clear();
     router.replace("/sign-in");
   }

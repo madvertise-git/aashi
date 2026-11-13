@@ -45,6 +45,8 @@ jobs:
         run: pnpm lint
       - name: Types
         run: pnpm typecheck
+      - name: OpenAPI contract and generated web client are up to date
+        run: pnpm openapi:check
 
       - name: Create database roles and databases
         run: pnpm db:bootstrap

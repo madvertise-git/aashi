@@ -1,13 +1,12 @@
 "use client";
 
-import type { Agency } from "@aashi/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button, FormError } from "@/components/ui";
-import { api, ApiError } from "@/lib/api";
+import { client, ApiError } from "@/lib/api";
 import { useMe } from "@/lib/queries";
 
 /** Where an invite link lands. The person signs in (or creates an account) with the invited email, then joins. */
@@ -25,7 +24,7 @@ function Accept() {
     setBusy(true);
     setError(null);
     try {
-      const agency = await api<Agency>("/v1/invites/accept", { method: "POST", body: { token } });
+      const agency = (await client.POST("/v1/invites/accept", { body: { token } })).data!;
       queryClient.clear();
       router.push(`/agencies/${agency.id}`);
     } catch (e) {

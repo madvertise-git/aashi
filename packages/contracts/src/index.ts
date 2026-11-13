@@ -74,36 +74,67 @@ export const listQuery = z.object({
 });
 export type ListQuery = z.infer<typeof listQuery>;
 
-export type Role = "owner" | "admin" | "member";
-export interface User { id: string; email: string; name: string; twoFactorEnabled: boolean }
+// ---------------------------------------------------------------------------
+// What the API returns. Written as rules too, so the OpenAPI contract
+// (openapi.json) is generated from this file and nothing else.
+// ---------------------------------------------------------------------------
+const id = z.uuid();
+const timestamp = z.iso.datetime();
+
+export const role = z.enum(["owner", "admin", "member"]);
+export type Role = z.infer<typeof role>;
+
+export const user = z.object({ id, email: z.string(), name: z.string(), twoFactorEnabled: z.boolean() });
+export type User = z.infer<typeof user>;
+
 /** With two-factor on, the password is only step one: `user` is null until the code is verified. */
-export interface SignInResult { twoFactorRequired: boolean; user: User | null }
+export const signInResult = z.object({ twoFactorRequired: z.boolean(), user: user.nullable() });
+export type SignInResult = z.infer<typeof signInResult>;
+
 /** Shown once when two-factor is set up: a link for the authenticator app, and one-time backup codes. */
-export interface TwoFactorSetup { totpUri: string; backupCodes: string[] }
-export interface Agency { id: string; name: string; role: Role }
-export interface Member { userId: string; name: string; email: string; role: Role }
+export const twoFactorSetup = z.object({ totpUri: z.string(), backupCodes: z.array(z.string()) });
+export type TwoFactorSetup = z.infer<typeof twoFactorSetup>;
+
+export const agency = z.object({ id, name: z.string(), role });
+export type Agency = z.infer<typeof agency>;
+
+export const member = z.object({ userId: id, name: z.string(), email: z.string(), role });
+export type Member = z.infer<typeof member>;
+
 /** An invite that has not been accepted yet. */
-export interface Invite { id: string; email: string; role: "admin" | "member"; expiresAt: string; createdAt: string }
-export interface Account { id: string; agencyId: string; name: string; createdAt: string }
-export interface Contact {
-  id: string;
-  accountId: string;
-  firstName: string;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  createdAt: string;
-}
-export interface Me { user: User; agencies: Agency[] }
+export const invite = z.object({ id, email: z.string(), role: z.enum(["admin", "member"]), expiresAt: timestamp, createdAt: timestamp });
+export type Invite = z.infer<typeof invite>;
+
+export const account = z.object({ id, agencyId: id, name: z.string(), createdAt: timestamp });
+export type Account = z.infer<typeof account>;
+
+export const contact = z.object({
+  id,
+  accountId: id,
+  firstName: z.string(),
+  lastName: z.string().nullable(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  createdAt: timestamp,
+});
+export type Contact = z.infer<typeof contact>;
+
+export const me = z.object({ user, agencies: z.array(agency) });
+export type Me = z.infer<typeof me>;
+
 /** "Give me the next page after this one." nextCursor is null on the last page. */
+export const page = <T extends z.ZodType>(item: T) => z.object({ items: z.array(item), nextCursor: id.nullable() });
 export interface Page<T> { items: T[]; nextCursor: string | null }
 
 /** Every error from the API has this shape (RFC 9457 "problem details"). */
-export interface Problem {
-  type: string;
-  title: string;
-  status: number;
-  code: string;
-  detail?: string;
-  errors?: { path: string; message: string }[];
-}
+export const problem = z.object({
+  type: z.string(),
+  title: z.string(),
+  status: z.int(),
+  code: z.string(),
+  detail: z.string().optional(),
+  errors: z.array(z.object({ path: z.string(), message: z.string() })).optional(),
+});
+export type Problem = z.infer<typeof problem>;
+
+export const health = z.object({ status: z.literal("ok") });

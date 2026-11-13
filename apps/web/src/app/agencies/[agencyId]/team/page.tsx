@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
 import { Button, Card, Empty, Field, FormError } from "@/components/ui";
-import { api, ApiError } from "@/lib/api";
+import { client, ApiError } from "@/lib/api";
 import { keys, useInvites, useMe, useMembers } from "@/lib/queries";
 
 const ROLE_NAMES = { owner: "Owner", admin: "Admin", member: "Member" } as const;
@@ -37,7 +37,7 @@ function Team({ agencyId }: { agencyId: string }) {
   const submit = form.handleSubmit(async (values) => {
     setSentTo(null);
     try {
-      const invite = await api<Invite>(`/v1/agencies/${agencyId}/invites`, { method: "POST", body: values });
+      const invite = (await client.POST("/v1/agencies/{agencyId}/invites", { params: { path: { agencyId } }, body: values })).data!;
       form.reset();
       setSentTo(invite.email);
       await queryClient.invalidateQueries({ queryKey: keys.invites(agencyId) });
@@ -48,7 +48,9 @@ function Team({ agencyId }: { agencyId: string }) {
   });
 
   async function revoke(invite: Invite) {
-    await api(`/v1/agencies/${agencyId}/invites/${invite.id}`, { method: "DELETE" }).catch(() => undefined);
+    await client
+      .DELETE("/v1/agencies/{agencyId}/invites/{inviteId}", { params: { path: { agencyId, inviteId: invite.id } } })
+      .catch(() => undefined);
     await queryClient.invalidateQueries({ queryKey: keys.invites(agencyId) });
   }
 
