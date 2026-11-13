@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button, Field, FormError } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, nextPath } from "@/lib/api";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.");
 
@@ -22,7 +22,7 @@ export default function SignIn() {
 
   function done() {
     queryClient.clear();
-    router.push("/");
+    router.push(nextPath("/"));
   }
 
   const submit = form.handleSubmit(async (values) => {

@@ -25,6 +25,7 @@ function Accounts({ agencyId }: { agencyId: string }) {
   const me = useMe();
   const accounts = useAccounts(agencyId);
   const agency = me.data?.agencies.find((a) => a.id === agencyId);
+  const canManage = agency?.role === "owner" || agency?.role === "admin";
   const form = useForm<CreateAccountInput>({ resolver: zodResolver(createAccountInput) });
   const { errors, isSubmitting } = form.formState;
 
@@ -43,7 +44,10 @@ function Accounts({ agencyId }: { agencyId: string }) {
   return (
     <>
       <h1 className="mb-1 text-2xl font-semibold">{agency?.name ?? "Agency"}</h1>
-      <p className="mb-6 text-sm text-ink-muted">Each client account keeps one client’s contacts and data separate.</p>
+      <p className="mb-6 text-sm text-ink-muted">
+        Each client account keeps one client’s contacts and data separate.{" "}
+        <Link className="text-brand underline" href={`/agencies/${agencyId}/team`}>Team</Link>
+      </p>
       <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <Card title="Client accounts">
           {accounts.isPending ? (
@@ -63,13 +67,13 @@ function Accounts({ agencyId }: { agencyId: string }) {
             </ul>
           )}
         </Card>
-        <Card title="Add a client account" className="self-start">
+        {canManage && <Card title="Add a client account" className="self-start">
           <form onSubmit={submit} noValidate className="flex flex-col gap-4">
             <Field label="Client name" error={errors.name?.message} {...form.register("name")} />
             <FormError>{errors.root?.message}</FormError>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Adding…" : "Add client account"}</Button>
           </form>
-        </Card>
+        </Card>}
       </div>
     </>
   );

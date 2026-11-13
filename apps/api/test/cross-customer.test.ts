@@ -7,7 +7,7 @@ import { createTenant, startApp, type TenantFixture } from "./helpers";
 
 interface Action {
   name: string;
-  method: "get" | "post";
+  method: "get" | "post" | "delete";
   /** The address, built from the *other* customer's IDs. */
   path: (other: TenantFixture) => string;
   body?: Record<string, unknown>;
@@ -16,6 +16,10 @@ interface Action {
 const ACTIONS: Action[] = [
   { name: "list accounts", method: "get", path: (o) => `/v1/agencies/${o.agency.id}/accounts` },
   { name: "create account", method: "post", path: (o) => `/v1/agencies/${o.agency.id}/accounts`, body: { name: "Intruder" } },
+  { name: "list members", method: "get", path: (o) => `/v1/agencies/${o.agency.id}/members` },
+  { name: "list invites", method: "get", path: (o) => `/v1/agencies/${o.agency.id}/invites` },
+  { name: "create invite", method: "post", path: (o) => `/v1/agencies/${o.agency.id}/invites`, body: { email: "intruder@example.test", role: "admin" } },
+  { name: "revoke invite", method: "delete", path: (o) => `/v1/agencies/${o.agency.id}/invites/${o.invite.id}` },
   { name: "get account", method: "get", path: (o) => `/v1/accounts/${o.account.id}` },
   { name: "list contacts", method: "get", path: (o) => `/v1/accounts/${o.account.id}/contacts` },
   { name: "create contact", method: "post", path: (o) => `/v1/accounts/${o.account.id}/contacts`, body: { firstName: "Intruder" } },
