@@ -12,6 +12,11 @@ export const keys = {
   invites: (agencyId: string) => ["agency", agencyId, "invites"] as const,
   account: (accountId: string) => ["account", accountId] as const,
   contacts: (accountId: string) => ["account", accountId, "contacts"] as const,
+  contact: (accountId: string, contactId: string) => ["account", accountId, "contacts", contactId] as const,
+  notes: (accountId: string, contactId: string) => ["account", accountId, "contacts", contactId, "notes"] as const,
+  companies: (accountId: string) => ["account", accountId, "companies"] as const,
+  tags: (accountId: string) => ["account", accountId, "tags"] as const,
+  customFields: (accountId: string) => ["account", accountId, "custom-fields"] as const,
 };
 
 export const useMe = () =>
@@ -50,4 +55,38 @@ export const useInvites = (agencyId: string, enabled: boolean) =>
     queryKey: keys.invites(agencyId),
     queryFn: async () => (await client.GET("/v1/agencies/{agencyId}/invites", { params: { path: { agencyId } } })).data!,
     enabled,
+  });
+
+export const useContact = (accountId: string, contactId: string) =>
+  useQuery({
+    queryKey: keys.contact(accountId, contactId),
+    queryFn: async () =>
+      (await client.GET("/v1/accounts/{accountId}/contacts/{contactId}", { params: { path: { accountId, contactId } } })).data!,
+  });
+
+export const useNotes = (accountId: string, contactId: string) =>
+  useQuery({
+    queryKey: keys.notes(accountId, contactId),
+    queryFn: async () =>
+      (await client.GET("/v1/accounts/{accountId}/contacts/{contactId}/notes", { params: { path: { accountId, contactId } } })).data!,
+  });
+
+/** The first 100 companies: enough for a picker until search exists. */
+export const useCompanies = (accountId: string) =>
+  useQuery({
+    queryKey: keys.companies(accountId),
+    queryFn: async () =>
+      (await client.GET("/v1/accounts/{accountId}/companies", { params: { path: { accountId }, query: { limit: 100 } } })).data!,
+  });
+
+export const useTags = (accountId: string) =>
+  useQuery({
+    queryKey: keys.tags(accountId),
+    queryFn: async () => (await client.GET("/v1/accounts/{accountId}/tags", { params: { path: { accountId } } })).data!,
+  });
+
+export const useCustomFields = (accountId: string) =>
+  useQuery({
+    queryKey: keys.customFields(accountId),
+    queryFn: async () => (await client.GET("/v1/accounts/{accountId}/custom-fields", { params: { path: { accountId } } })).data!,
   });
