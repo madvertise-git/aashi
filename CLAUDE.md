@@ -139,65 +139,73 @@ connected normally.
 
 ## 5. What exists today
 
-Merged to `main` (PR #1): the **walking skeleton**. A user can sign up, create an agency, add a client account and
-add a contact. It runs locally and in CI. **Nothing is deployed anywhere yet.**
+On `main`: the **walking skeleton** (PR #1). On branches not yet merged (see section 7): sign-in on Better Auth
+with two-factor codes, Redis sessions and rate limiting; team invites and roles; the OpenAPI contract and generated
+web client; infrastructure code and the deploy workflow. **Nothing is deployed anywhere yet.**
 
 ```
 apps/api/        NestJS API
-  src/platform/            database + tenant context, errors, health checks, outbox helper
-  src/modules/identity/    sign-up, sign-in, sessions
-  src/modules/tenancy/     agencies, client accounts, membership checks
+  src/platform/            database + tenant context, errors, health checks, outbox helper,
+                           key-value store (Redis), rate limiter, mailer (logs until SES exists)
+  src/modules/identity/    sign-up, sign-in, two-factor codes: Better Auth behind our own /v1/auth addresses
+  src/modules/tenancy/     agencies, client accounts, membership checks, team invites, roles
   src/modules/crm/         contacts
-  test/                    journey, cross-customer harness, row-level security tests
-apps/web/        Next.js app: sign-in screens, onboarding, agency/account switcher, contacts; e2e/ (Playwright)
-packages/contracts/   Zod rules and response types shared by web and API
-packages/db/          migrations, RLS policies, database roles, "every table has RLS" check
-docs/adr/0001-tenancy-and-row-level-security.md   read this before touching the database
+  test/                    journey, sign-in, invites, contract, cross-customer harness, row-level security tests
+apps/web/        Next.js app: sign-in (with code step), onboarding, switcher, contacts, team, security; e2e/
+packages/contracts/   Zod rules for inputs and replies; src/openapi.ts lists every endpoint; openapi.json is generated
+packages/db/          migrations, RLS policies, role bootstrap script, "every table has RLS" check
+infra/                OpenTofu for AWS Mumbai + Cloudflare; infra/README.md has the first-time steps
+docs/adr/             0001 tenancy and row-level security; 0002 sign-in on Better Auth. Read both before touching the database.
 ```
 
 How tenancy works in the code:
 - The API connects as `platform_app`, which cannot bypass row-level security. Migrations run as `platform_owner`.
-  `platform_breakglass` exists with login off.
+  The sign-in engine connects as `platform_auth`, which reaches only the sign-in tables. `platform_breakglass`
+  exists with login off.
 - `DatabaseService.withContext(ctx, fn)` is the only way to reach tenant data. It opens a transaction and sets
   `app.user_id`, `app.agency_id` and `app.account_id`; the policies read them. Unset means no rows.
 - Request pipeline: `SessionGuard` (who is this?) → `AgencyGuard` or `AccountGuard` (are they a member?) →
-  service runs inside `withContext`.
-- Three `SECURITY DEFINER` functions (`auth_user_by_email`, `auth_session`, `auth_account_access`) are the only code
-  that reads past row-level security. Do not add another without an ADR.
+  `requireRole` where the action needs an admin → service runs inside `withContext`.
+- Two `SECURITY DEFINER` functions (`auth_account_access`, `auth_invite`) are the only code that reads past
+  row-level security. Do not add another without an ADR.
 - Events are written to `outbox` in the same transaction as the change. Nothing relays them yet.
 
-Commands: `pnpm install`, `docker compose up -d`, `pnpm db:migrate`, `pnpm dev`.
-Checks: `pnpm lint`, `pnpm typecheck`, `pnpm db:check-rls`, `pnpm test`, `pnpm e2e`, `pnpm build`.
+Commands: `pnpm install`, `docker compose up -d`, `pnpm db:bootstrap` (once), `pnpm db:migrate`, `pnpm dev`.
+Checks: `pnpm lint`, `pnpm typecheck`, `pnpm openapi:check`, `pnpm db:check-rls`, `pnpm test`, `pnpm e2e`,
+`pnpm build`.
 
 **When adding a table:** stamp it with `agency_id` (and `account_id` for client data), enable *and force* row-level
 security in the same migration, add a policy, grant `platform_app` only what it needs, and mirror it in
 `packages/db/src/schema.ts`.
-**When adding an endpoint:** add it to `ACTIONS` in `apps/api/test/cross-customer.test.ts`.
+**When adding an endpoint:** add it to `operations` in `packages/contracts/src/openapi.ts`, run `pnpm openapi`,
+and add it to `ACTIONS` in `apps/api/test/cross-customer.test.ts`. The contract test fails if the first is missed.
+**In the web app:** call the API through `client` in `apps/web/src/lib/api.ts` (generated, typed), never raw `fetch`.
 
-### Where the skeleton departs from the plan
-- **Sign-in is a small in-house implementation** (scrypt hashes, session tokens stored hashed in PostgreSQL), not
-  Better Auth, and sessions are not in Redis. No two-factor codes or invites. The owner has not yet decided whether
-  to switch; the recommendation is to switch before real users sign up.
-- **No OpenAPI document or generated client.** Web and API share types from `packages/contracts`.
+### Where the code departs from the plan
+- **Better Auth is not mounted as a web handler.** Our own controllers call it, so addresses, errors and the
+  OpenAPI contract stay ours (ADR 0002). Rate limiting is our own guard, not Better Auth's.
+- **The OpenAPI document is generated from Zod rules in `packages/contracts`**, not from NestJS decorators.
+- **Email is not connected.** `Mailer` writes to the log until Amazon SES exists, so there is no email
+  verification or password reset yet, and invite links only reach people in development logs.
 - Runs on Node 22 (plan says 24). Tests use a plain PostgreSQL connection, not Testcontainers.
 - Memberships are agency-level only; there are no account-level roles for a client's own team yet.
+- Without `REDIS_URL` the API keeps sessions in memory; production refuses to start that way.
 
 ## 6. What to do next
 
 ### Finish Phase 3 (Foundation), in this order
-1. **Sign-in:** Better Auth (pending the owner's decision), two-factor codes, team invites, the agency → account
-   switcher backed by roles.
-2. **Redis:** sessions, the first rate limiter (sign-in first), and a cache helper that adds the tenant to every key
-   and protects against stampedes.
-3. **OpenAPI:** generate the document from the API, generate the typed web client from it.
+1. **Sign-in:** done except email verification and password reset (need SES) and a QR code on two-factor set-up.
+2. **Redis:** sessions and rate limiter done. Still to do: a cache helper that adds the tenant to every key and
+   protects against stampedes.
+3. **OpenAPI:** done.
 4. **Request pipeline:** find the agency from the request's domain (needed for white-label).
 5. **Events:** outbox relay; a Temporal dev cluster with a "hello" workflow.
 6. **Stand-in service:** fake Meta (campaigns, leads, WhatsApp messages on a timer, realistic errors) and fake AI
    (sample copy, placeholder images), with contract tests for every socket.
 7. **Frontend foundation:** design system components in Storybook with theming through colour variables; error
    handling, translations and analytics wiring.
-8. **Infrastructure and delivery:** OpenTofu for network, ECS, Aurora, ElastiCache, S3, Cloudflare, Secrets Manager
-   and KMS; preview environment per pull request; one-click deploy with tested rollback; pipeline under 10 minutes.
+8. **Infrastructure and delivery:** OpenTofu code and the deploy/rollback workflow are written but have never been
+   applied or run. Still to do: first apply, a rehearsed rollback, a preview environment per pull request, SES.
 9. **Operations:** OpenTelemetry, Grafana, Sentry, feature flags, security scans in CI, a check that migrations are
    backward compatible, seed scripts with realistic fake Indian names, phones and companies.
 
@@ -232,17 +240,21 @@ client accounts, 250 million contacts and 20 million messages a day without a re
 
 ## 7. Open decisions and things only the owner can do
 
-**Decisions waiting on the owner**
-- Better Auth versus keeping the in-house sign-in.
-- Whether to freeze a smaller version one. The proposal was: login and tenancy, CRM, pipelines, forms, a basic
-  inbox, and the Meta and AI stand-ins. Not yet confirmed. Until it is, do not build past the foundation without
+**Decisions made (13 November 2026)**
+- Sign-in is on Better Auth (ADR 0002).
+- **Version one is frozen to the smaller scope:** login and tenancy, CRM, pipelines, forms, a basic inbox, and the
+  Meta and AI stand-ins. Everything else in the sixteen modules waits for a later phase; do not start it without
   asking.
+
+**Decisions waiting on the owner**
+- None open. Ask when something new comes up.
 
 **The owner's work, not Claude Code's**
 - Business approvals, which take weeks and cannot be sped up: Meta Business Verification, TRAI DLT registration,
   Meta developer apps and WhatsApp Business account, Google OAuth verification, telephony KYC, Razorpay and Stripe
   merchant accounts, Apple and Google developer accounts, legal documents (terms, privacy policy, DPDP notices).
 - Creating and paying for accounts: AWS, Cloudflare, a domain. Production deployment is blocked until these exist.
+  The steps after that are in `infra/README.md`.
 - Running deployments, holding secrets and keys, watching production.
 - Testing each feature as a real user and reporting what is wrong.
 - Arranging an external security test before real client data goes in.

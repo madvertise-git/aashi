@@ -64,3 +64,32 @@ jobs:
         run: pnpm --filter @aashi/web exec playwright install --with-deps chromium
       - name: End-to-end journey
         run: pnpm e2e
+
+  # The container images build. Nothing is pushed; this only catches a broken Dockerfile before a deploy does.
+  images:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: false
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+
+  # The infrastructure code is formatted and valid. It does not touch any cloud account.
+  infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+      - run: tofu -chdir=infra fmt -check -recursive
+      - run: tofu -chdir=infra init -backend=false -input=false
+      - run: tofu -chdir=infra validate

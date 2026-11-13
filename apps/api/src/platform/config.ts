@@ -14,6 +14,8 @@ export interface Config {
   appUrl: string;
   /** Put in front of every Redis key, so environments sharing a server stay apart. */
   keyPrefix: string;
+  /** How many proxies sit in front of the API (Cloudflare, load balancer, web app), so the caller's real address is used for rate limits. */
+  trustedProxyHops: number;
   production: boolean;
 }
 
@@ -35,6 +37,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     appName: env.APP_NAME ?? "Aashi",
     appUrl: need("APP_URL", "http://localhost:3000"),
     keyPrefix: env.KEY_PREFIX ?? "aashi",
+    trustedProxyHops: Number(env.TRUSTED_PROXY_HOPS ?? 0),
     production,
   };
 }

@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "bootstrap": "psql \"${DATABASE_SUPERUSER_URL:-postgres://postgres:postgres@localhost:5432/postgres}\" -v ON_ERROR_STOP=1 -f scripts/bootstrap.sql",
+    "bootstrap": "tsx scripts/bootstrap.ts",
     "migrate": "tsx scripts/migrate.ts",
     "check-rls": "tsx scripts/check-rls.ts",
     "typecheck": "tsc --noEmit"

@@ -1,4 +1,4 @@
-# Local development: PostgreSQL (creates the roles and the dev + test databases on first start)
+# Local development: PostgreSQL (run `pnpm db:bootstrap` once to create the roles and databases)
 # and Valkey, the open-source Redis, for sessions and rate limits.
 services:
   postgres:
@@ -9,7 +9,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./packages/db/scripts/bootstrap.sql:/docker-entrypoint-initdb.d/00-bootstrap.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
