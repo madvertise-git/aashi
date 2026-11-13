@@ -2,3 +2,6 @@
 *.backend.hcl
 .terraform/
 *.tfstate*
+# Generated on first `tofu init`. Commit it once it has been created with hashes for both macOS and Linux:
+#   tofu providers lock -platform=linux_amd64 -platform=darwin_arm64
+.terraform.lock.hcl

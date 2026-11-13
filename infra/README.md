@@ -2,8 +2,9 @@
 
 OpenTofu code for one environment of Aashi on AWS in Mumbai (`ap-south-1`), with Cloudflare in front.
 
-**Status: written and validated, never applied.** No AWS or Cloudflare account existed when this was written, so
-nothing here has created a real resource yet. Expect to fix small things on the first `tofu apply`, and read the
+**Status: passes `tofu validate`, never applied.** Validation checks the code is well-formed; it does not prove
+the resources will create cleanly. No AWS or Cloudflare account existed when this was written, so nothing here has
+created a real resource yet. Expect to fix small things on the first `tofu apply`, and read the
 plan before approving it.
 
 ## What it creates
