@@ -31,6 +31,16 @@ export type CreateAgencyInput = z.infer<typeof createAgencyInput>;
 export const createAccountInput = z.object({ name: name("Client name") });
 export type CreateAccountInput = z.infer<typeof createAccountInput>;
 
+/** The owner role is given when an agency is created and cannot be handed out by invite. */
+export const createInviteInput = z.object({
+  email: z.email("Enter a valid email address").max(254),
+  role: z.enum(["admin", "member"], "Choose a role"),
+});
+export type CreateInviteInput = z.infer<typeof createInviteInput>;
+
+export const acceptInviteInput = z.object({ token: z.string().min(20).max(200) });
+export type AcceptInviteInput = z.infer<typeof acceptInviteInput>;
+
 /**
  * Phones are stored in international format. A bare 10-digit Indian mobile
  * number is accepted and given +91; anything else must already start with +.
@@ -71,6 +81,9 @@ export interface SignInResult { twoFactorRequired: boolean; user: User | null }
 /** Shown once when two-factor is set up: a link for the authenticator app, and one-time backup codes. */
 export interface TwoFactorSetup { totpUri: string; backupCodes: string[] }
 export interface Agency { id: string; name: string; role: Role }
+export interface Member { userId: string; name: string; email: string; role: Role }
+/** An invite that has not been accepted yet. */
+export interface Invite { id: string; email: string; role: "admin" | "member"; expiresAt: string; createdAt: string }
 export interface Account { id: string; agencyId: string; name: string; createdAt: string }
 export interface Contact {
   id: string;

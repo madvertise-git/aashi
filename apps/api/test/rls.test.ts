@@ -6,7 +6,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTenant, startApp, type TenantFixture } from "./helpers";
 
-const TABLES = ["users", "agencies", "memberships", "accounts", "contacts"];
+const TABLES = ["users", "invites", "agencies", "memberships", "accounts", "contacts"];
 
 let app: INestApplication;
 let pool: pg.Pool;

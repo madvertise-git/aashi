@@ -1,6 +1,7 @@
 import { createHmac, randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
-import type { Account, Agency, Contact } from "@aashi/contracts";
+import type { Account, Agency, Contact, Invite } from "@aashi/contracts";
+import { Mailer } from "../src/platform";
 import request from "supertest";
 import type TestAgent from "supertest/lib/agent";
 import { createApp } from "../src/app";
@@ -23,6 +24,8 @@ export interface TenantFixture {
   agency: Agency;
   account: Account;
   contact: Contact;
+  /** An open invite to this agency. */
+  invite: Invite;
 }
 
 export const uniqueEmail = () => `user-${randomUUID()}@example.test`;
@@ -44,7 +47,10 @@ export async function createTenant(app: INestApplication, label: string): Promis
       .send({ firstName: label, lastName: "Contact", phone: uniquePhone() })
       .expect(201)
   ).body as Contact;
-  return { agent, email, password, agency, account, contact };
+  const invite = (
+    await agent.post(`/v1/agencies/${agency.id}/invites`).send({ email: uniqueEmail(), role: "member" }).expect(201)
+  ).body as Invite;
+  return { agent, email, password, agency, account, contact, invite };
 }
 
 /** The code an authenticator app would show right now for this set-up link (RFC 6238, SHA-1, 6 digits, 30 s). */
@@ -59,4 +65,19 @@ export function totpCode(totpUri: string, at = Date.now()): string {
   const mac = createHmac("sha1", key).update(counter).digest();
   const offset = mac[mac.length - 1]! & 0xf;
   return ((mac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).toString().padStart(6, "0");
+}
+
+/** The secret from the most recent invite email sent to this address. */
+export function inviteToken(app: INestApplication, email: string): string {
+  const mail = app.get(Mailer).sent.findLast((m) => m.to === email.toLowerCase());
+  const token = mail?.text.match(/token=([\w-]+)/)?.[1];
+  if (!token) throw new Error(`No invite email was sent to ${email}`);
+  return token;
+}
+
+/** A signed-in user who belongs to no agency yet. */
+export async function createUser(app: INestApplication, email = uniqueEmail()) {
+  const agent = request.agent(app.getHttpServer());
+  await agent.post("/v1/auth/sign-up").send({ name: "New Person", email, password: "correct horse battery" }).expect(201);
+  return { agent, email };
 }

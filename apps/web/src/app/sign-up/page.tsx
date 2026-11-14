@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button, Field, FormError } from "@/components/ui";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, nextPath } from "@/lib/api";
 
 export default function SignUp() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function SignUp() {
     try {
       await api<User>("/v1/auth/sign-up", { method: "POST", body: values });
       queryClient.clear();
-      router.push("/onboarding");
+      router.push(nextPath("/onboarding"));
     } catch (error) {
       if (error instanceof ApiError && error.code === "email_taken") {
         form.setError("email", { message: "An account with this email already exists. Sign in instead." });

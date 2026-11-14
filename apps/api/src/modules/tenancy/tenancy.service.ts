@@ -4,6 +4,7 @@ import { schema } from "@aashi/db";
 import { asc, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { DatabaseService, recordEvent } from "../../platform";
+import { requireRole } from "./roles";
 import type { Tenant } from "./tenant.guard";
 
 const toAccount = (row: typeof schema.accounts.$inferSelect): Account => ({
@@ -29,6 +30,7 @@ export class TenancyService {
   }
 
   async createAccount(tenant: Tenant, input: CreateAccountInput): Promise<Account> {
+    requireRole(tenant, "admin");
     return this.database.withContext(tenant, async (tx) => {
       const [row] = await tx
         .insert(schema.accounts)

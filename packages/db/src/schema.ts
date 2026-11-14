@@ -30,6 +30,18 @@ export const memberships = pgTable("memberships", {
   createdAt: utc("created_at").notNull().defaultNow(),
 });
 
+export const invites = pgTable("invites", {
+  id: uuid("id").primaryKey(),
+  agencyId: uuid("agency_id").notNull(),
+  email: citext("email").notNull(),
+  role: text("role", { enum: ["admin", "member"] }).notNull(),
+  tokenHash: text("token_hash").notNull(),
+  invitedBy: uuid("invited_by"),
+  expiresAt: utc("expires_at").notNull(),
+  acceptedAt: utc("accepted_at"),
+  createdAt: utc("created_at").notNull().defaultNow(),
+});
+
 export const accounts = pgTable("accounts", {
   id: uuid("id").primaryKey(),
   agencyId: uuid("agency_id").notNull(),

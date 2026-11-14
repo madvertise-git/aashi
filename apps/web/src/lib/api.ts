@@ -14,7 +14,7 @@ export class ApiError extends Error {
 }
 
 /** Calls the API through the web app's /api proxy and returns the JSON reply. */
-export async function api<T>(path: string, init?: { method?: "GET" | "POST"; body?: unknown }): Promise<T> {
+export async function api<T>(path: string, init?: { method?: "GET" | "POST" | "DELETE"; body?: unknown }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
@@ -48,3 +48,9 @@ export async function api<T>(path: string, init?: { method?: "GET" | "POST"; bod
 }
 
 export const isNotFound = (error: unknown): boolean => error instanceof ApiError && error.status === 404;
+
+/** Where to go after signing in: the `next` address if it is a path inside this app, otherwise the fallback. */
+export function nextPath(fallback: string): string {
+  const next = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
