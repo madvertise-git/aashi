@@ -6,7 +6,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTenant, startApp, type TenantFixture } from "./helpers";
 
-const TABLES = ["users", "invites", "agencies", "memberships", "accounts", "contacts"];
+const TABLES = ["users", "invites", "agencies", "memberships", "accounts", "contacts", "companies", "tags", "contact_tags", "notes", "custom_fields"];
 
 let app: INestApplication;
 let pool: pg.Pool;
@@ -119,6 +119,53 @@ describe("row-level security", () => {
       expect((await c.query("DELETE FROM contacts WHERE id = $1", [b.contact.id])).rowCount).toBe(0);
       expect((await c.query("UPDATE accounts SET name = 'hacked' WHERE id = $1", [b.account.id])).rowCount).toBe(0);
     });
+  });
+
+  it.each(["companies", "tags", "contact_tags", "notes", "custom_fields"])(
+    "%s need the client account as well as the agency, and show only that account's rows",
+    async (table) => {
+      expect(await withContext({ agencyId: a.agency.id }, (c) => count(c, table))).toBe(0);
+      expect(await withContext({ agencyId: a.agency.id, accountId: b.account.id }, (c) => count(c, table))).toBe(0);
+      const mine = await withContext({ agencyId: a.agency.id, accountId: a.account.id }, (c) => c.query(`SELECT DISTINCT account_id FROM ${table}`));
+      expect(mine.rows.every((r) => r.account_id === a.account.id)).toBe(true);
+    },
+  );
+
+  it("a note or a tag cannot be attached to another account's contact, even with the database's checks alone", async () => {
+    const ctx = { agencyId: a.agency.id, accountId: a.account.id };
+    // Agency A's stamp on the row, agency B's contact: the two-column link refuses it.
+    await expect(
+      withContext(ctx, (c) =>
+        c.query("INSERT INTO notes (id, agency_id, account_id, contact_id, body) VALUES (gen_random_uuid(), $1, $2, $3, 'x')", [
+          a.agency.id,
+          a.account.id,
+          b.contact.id,
+        ]),
+      ),
+    ).rejects.toThrow(/foreign key/);
+    await expect(
+      withContext(ctx, (c) =>
+        c.query("INSERT INTO contact_tags (agency_id, account_id, contact_id, tag_id) VALUES ($1, $2, $3, $4)", [
+          a.agency.id,
+          a.account.id,
+          a.contact.id,
+          b.tag.id,
+        ]),
+      ),
+    ).rejects.toThrow(/foreign key/);
+    await expect(
+      withContext(ctx, (c) => c.query("UPDATE contacts SET company_id = $1 WHERE id = $2", [b.company.id, a.contact.id])),
+    ).rejects.toThrow(/foreign key/);
+    // Agency B's stamp from agency A's context: the policy refuses it.
+    await expect(
+      withContext(ctx, (c) =>
+        c.query("INSERT INTO notes (id, agency_id, account_id, contact_id, body) VALUES (gen_random_uuid(), $1, $2, $3, 'x')", [
+          b.agency.id,
+          b.account.id,
+          b.contact.id,
+        ]),
+      ),
+    ).rejects.toThrow(/row-level security/);
   });
 
   it("a contact cannot be attached to an account in a different agency", async () => {

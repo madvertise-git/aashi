@@ -15,7 +15,13 @@ const TITLES: Record<number, [code: string, title: string]> = {
 
 /** An error with a stable code that screens can act on. */
 export class ProblemException extends HttpException {
-  constructor(status: number, readonly code: string, detail: string) {
+  constructor(
+    status: number,
+    readonly code: string,
+    detail: string,
+    /** For validation failures: which field, and what is wrong with it. */
+    readonly errors?: { path: string; message: string }[],
+  ) {
     super(detail, status);
   }
 }
@@ -58,6 +64,7 @@ export class ProblemFilter implements ExceptionFilter {
         status,
         code: error instanceof ProblemException ? error.code : code,
         detail: error.message,
+        ...(error instanceof ProblemException && error.errors ? { errors: error.errors } : {}),
       };
     }
     if (pgCode(error) === "23505") {

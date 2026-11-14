@@ -54,3 +54,24 @@ export function Card({ title, children, className = "" }: { title?: string; chil
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-ink-muted">{children}</p>;
 }
+
+/** A labelled drop-down, styled like Field. */
+export function Select({ label, error, children, ...props }: ComponentProps<"select"> & { label: string; error?: string }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      <select id={id} className={`h-10 rounded-md border bg-surface px-2 text-sm ${error ? "border-danger" : "border-line"}`} {...props}>
+        {children}
+      </select>
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
+
+/** A quieter button for secondary and destructive actions. */
+export function QuietButton({ className = "", ...props }: ComponentProps<"button">) {
+  return <button type="button" className={`rounded-md border border-line px-3 py-1.5 text-sm hover:bg-canvas disabled:opacity-60 ${className}`} {...props} />;
+}

@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
-import type { Account, Agency, Contact, Invite } from "@aashi/contracts";
+import type { Account, Agency, Company, Contact, CustomField, Invite, Note, Tag } from "@aashi/contracts";
 import { Mailer } from "../src/platform";
 import request from "supertest";
 import type TestAgent from "supertest/lib/agent";
@@ -26,6 +26,12 @@ export interface TenantFixture {
   contact: Contact;
   /** An open invite to this agency. */
   invite: Invite;
+  company: Company;
+  tag: Tag;
+  /** A note on `contact`. */
+  note: Note;
+  /** A text field for contacts. */
+  field: CustomField;
 }
 
 export const uniqueEmail = () => `user-${randomUUID()}@example.test`;
@@ -50,7 +56,14 @@ export async function createTenant(app: INestApplication, label: string): Promis
   const invite = (
     await agent.post(`/v1/agencies/${agency.id}/invites`).send({ email: uniqueEmail(), role: "member" }).expect(201)
   ).body as Invite;
-  return { agent, email, password, agency, account, contact, invite };
+  const base = `/v1/accounts/${account.id}`;
+  const company = (await agent.post(`${base}/companies`).send({ name: `${label} Traders` }).expect(201)).body as Company;
+  const tag = (await agent.post(`${base}/tags`).send({ name: `${label} tag` }).expect(201)).body as Tag;
+  const note = (await agent.post(`${base}/contacts/${contact.id}/notes`).send({ body: `${label} note` }).expect(201)).body as Note;
+  const field = (
+    await agent.post(`${base}/custom-fields`).send({ entity: "contact", label: `${label} source`, type: "text" }).expect(201)
+  ).body as CustomField;
+  return { agent, email, password, agency, account, contact, invite, company, tag, note, field };
 }
 
 /** The code an authenticator app would show right now for this set-up link (RFC 6238, SHA-1, 6 digits, 30 s). */

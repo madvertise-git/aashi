@@ -4,6 +4,7 @@
   "entries": [
     { "idx": 0, "version": "7", "when": 1794500000000, "tag": "0000_foundation", "breakpoints": true },
     { "idx": 1, "version": "7", "when": 1794600000000, "tag": "0001_sign_in_engine", "breakpoints": true },
-    { "idx": 2, "version": "7", "when": 1794700000000, "tag": "0002_team_invites", "breakpoints": true }
+    { "idx": 2, "version": "7", "when": 1794700000000, "tag": "0002_team_invites", "breakpoints": true },
+    { "idx": 3, "version": "7", "when": 1794800000000, "tag": "0003_crm_core", "breakpoints": true }
   ]
 }

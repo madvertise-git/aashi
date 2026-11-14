@@ -3,6 +3,7 @@
 import { type CreateContactForm, createContactInput, type CreateContactInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
@@ -20,7 +21,11 @@ export default function AccountPage() {
       ) : (
         <>
           <h1 className="mb-1 text-2xl font-semibold">{account.data?.name ?? " "}</h1>
-          <p className="mb-6 text-sm text-ink-muted">Contacts in this client account.</p>
+          <p className="mb-6 text-sm text-ink-muted">
+            Contacts in this client account.{" "}
+            <Link className="text-brand underline" href={`/accounts/${accountId}/companies`}>Companies</Link>{" · "}
+            <Link className="text-brand underline" href={`/accounts/${accountId}/fields`}>Custom fields</Link>
+          </p>
           <Contacts accountId={accountId} />
         </>
       )}
@@ -70,7 +75,12 @@ function Contacts({ accountId }: { accountId: string }) {
               <tbody className="divide-y divide-line">
                 {contacts.data.items.map((contact) => (
                   <tr key={contact.id}>
-                    <td className="py-3 pr-4 font-medium">{[contact.firstName, contact.lastName].filter(Boolean).join(" ")}</td>
+                    <td className="py-3 pr-4 font-medium">
+                      <Link className="hover:text-brand hover:underline" href={`/accounts/${accountId}/contacts/${contact.id}`}>
+                        {[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+                      </Link>
+                      {contact.tags.length > 0 && <span className="ml-2 text-xs font-normal text-ink-muted">{contact.tags.map((t) => t.name).join(", ")}</span>}
+                    </td>
                     <td className="py-3 pr-4 whitespace-nowrap">{contact.phone ?? "—"}</td>
                     <td className="py-3">{contact.email ?? "—"}</td>
                   </tr>

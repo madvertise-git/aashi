@@ -141,7 +141,8 @@ connected normally.
 
 On `main`: the **walking skeleton** (PR #1). On branches not yet merged (see section 7): sign-in on Better Auth
 with two-factor codes, Redis sessions and rate limiting; team invites and roles; the OpenAPI contract and generated
-web client; infrastructure code and the deploy workflow; the Meta and AI stand-ins. **Nothing is deployed anywhere yet.**
+web client; infrastructure code and the deploy workflow; the Meta and AI stand-ins; and the first CRM work
+(companies, tags, notes, custom fields, editing and deleting contacts). **Nothing is deployed anywhere yet.**
 
 ```
 apps/api/        NestJS API
@@ -149,7 +150,7 @@ apps/api/        NestJS API
                            key-value store (Redis), rate limiter, mailer (logs until SES exists)
   src/modules/identity/    sign-up, sign-in, two-factor codes: Better Auth behind our own /v1/auth addresses
   src/modules/tenancy/     agencies, client accounts, membership checks, team invites, roles
-  src/modules/crm/         contacts
+  src/modules/crm/         contacts, companies, tags, notes, custom fields
   test/                    journey, sign-in, invites, contract, cross-customer harness, row-level security tests
 apps/web/        Next.js app: sign-in (with code step), onboarding, switcher, contacts, team, security; e2e/
 packages/contracts/   Zod rules for inputs and replies; src/openapi.ts lists every endpoint; openapi.json is generated
@@ -215,6 +216,11 @@ and add it to `ACTIONS` in `apps/api/test/cross-customer.test.ts`. The contract 
 Phase 3 is done when: the skeleton is live in production; the pipeline runs under 10 minutes with rollback tested;
 the RLS check and cross-customer harness are green; stand-ins serve fake leads, messages and AI output; dashboards
 and alerts exist for every service.
+
+### Version one CRM (started)
+Done: contacts (create, read, edit, delete), companies, tags, notes, custom fields, with screens.
+Still to do: tasks, saved lists, import/export, search, a company page that lists its people, bulk actions.
+Not yet met anywhere: idempotency keys on writes (an API rule).
 
 ### Then Phase 4 (Build), three releases
 - **Release 1 — Run the business:** contacts, companies, custom fields, tags, notes, tasks, import/export, saved
