@@ -2,7 +2,9 @@
   "name": "aashi",
   "private": true,
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=22.12" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -12,7 +14,9 @@
     "e2e": "pnpm --filter @aashi/web e2e",
     "db:bootstrap": "pnpm --filter @aashi/db bootstrap",
     "db:migrate": "pnpm --filter @aashi/db migrate",
-    "db:check-rls": "pnpm --filter @aashi/db check-rls"
+    "db:check-rls": "pnpm --filter @aashi/db check-rls",
+    "openapi": "pnpm --filter @aashi/contracts openapi && pnpm --filter @aashi/web api:generate",
+    "openapi:check": "pnpm --filter @aashi/contracts openapi:check && pnpm --filter @aashi/web api:check"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

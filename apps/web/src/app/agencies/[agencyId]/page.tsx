@@ -1,6 +1,6 @@
 "use client";
 
-import { type Account, createAccountInput, type CreateAccountInput } from "@aashi/contracts";
+import { createAccountInput, type CreateAccountInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
 import { Button, Card, Empty, Field, FormError } from "@/components/ui";
-import { api, isNotFound } from "@/lib/api";
+import { client, isNotFound } from "@/lib/api";
 import { keys, useAccounts, useMe } from "@/lib/queries";
 
 export default function AgencyPage() {
@@ -31,7 +31,7 @@ function Accounts({ agencyId }: { agencyId: string }) {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      await api<Account>(`/v1/agencies/${agencyId}/accounts`, { method: "POST", body: values });
+      await client.POST("/v1/agencies/{agencyId}/accounts", { params: { path: { agencyId } }, body: values });
       form.reset();
       await queryClient.invalidateQueries({ queryKey: keys.accounts(agencyId) });
     } catch (error) {

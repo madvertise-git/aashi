@@ -1,13 +1,13 @@
 "use client";
 
-import { type Contact, type CreateContactForm, createContactInput, type CreateContactInput } from "@aashi/contracts";
+import { type CreateContactForm, createContactInput, type CreateContactInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
 import { Button, Card, Empty, Field, FormError } from "@/components/ui";
-import { api, ApiError, isNotFound } from "@/lib/api";
+import { client, ApiError, isNotFound } from "@/lib/api";
 import { keys, useAccount, useContacts } from "@/lib/queries";
 
 export default function AccountPage() {
@@ -36,7 +36,7 @@ function Contacts({ accountId }: { accountId: string }) {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      await api<Contact>(`/v1/accounts/${accountId}/contacts`, { method: "POST", body: values });
+      await client.POST("/v1/accounts/{accountId}/contacts", { params: { path: { accountId } }, body: values });
       form.reset();
       await queryClient.invalidateQueries({ queryKey: keys.contacts(accountId) });
     } catch (error) {

@@ -1,13 +1,13 @@
 "use client";
 
-import { type Agency, createAgencyInput, type CreateAgencyInput } from "@aashi/contracts";
+import { createAgencyInput, type CreateAgencyInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
 import { Button, Card, Field, FormError } from "@/components/ui";
-import { api } from "@/lib/api";
+import { client } from "@/lib/api";
 import { keys } from "@/lib/queries";
 
 export default function Onboarding() {
@@ -18,7 +18,7 @@ export default function Onboarding() {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      const agency = await api<Agency>("/v1/agencies", { method: "POST", body: values });
+      const agency = (await client.POST("/v1/agencies", { body: values })).data!;
       await queryClient.invalidateQueries({ queryKey: keys.me });
       router.push(`/agencies/${agency.id}`);
     } catch (error) {

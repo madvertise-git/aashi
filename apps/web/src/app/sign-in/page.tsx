@@ -1,6 +1,6 @@
 "use client";
 
-import { codeInput, type CodeInput, signInInput, type SignInInput, type SignInResult, type User } from "@aashi/contracts";
+import { codeInput, type CodeInput, signInInput, type SignInInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button, Field, FormError } from "@/components/ui";
-import { api, nextPath } from "@/lib/api";
+import { client, nextPath } from "@/lib/api";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.");
 
@@ -27,7 +27,7 @@ export default function SignIn() {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      const result = await api<SignInResult>("/v1/auth/sign-in", { method: "POST", body: values });
+      const result = (await client.POST("/v1/auth/sign-in", { body: values })).data!;
       if (result.twoFactorRequired) setNeedsCode(true);
       else done();
     } catch (error) {
@@ -37,7 +37,7 @@ export default function SignIn() {
 
   const submitCode = codeForm.handleSubmit(async (values) => {
     try {
-      await api<User>("/v1/auth/two-factor/verify", { method: "POST", body: values });
+      await client.POST("/v1/auth/two-factor/verify", { body: values });
       done();
     } catch (error) {
       codeForm.setError("root", { message: message(error) });
