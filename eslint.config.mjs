@@ -18,6 +18,11 @@ export default tseslint.config(
               regex: "^\\.\\./(?!\\.\\.)[^/]+/.+",
               message: "Import other modules through their index.ts facade, not their internal files.",
             },
+            {
+              // Business code sees the socket's interface, never a particular provider's adapter.
+              regex: "/sockets/.+",
+              message: "Import sockets through src/sockets/index.ts. Modules must not depend on a stand-in or a real adapter.",
+            },
           ],
         },
       ],

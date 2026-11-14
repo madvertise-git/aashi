@@ -16,6 +16,8 @@ export interface Config {
   keyPrefix: string;
   /** How many proxies sit in front of the API (Cloudflare, load balancer, web app), so the caller's real address is used for rate limits. */
   trustedProxyHops: number;
+  /** "realistic" makes the Meta and AI stand-ins slow and flaky, as the real services are. Default: well-behaved. */
+  standInBehaviour: "calm" | "realistic";
   production: boolean;
 }
 
@@ -38,6 +40,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     appUrl: need("APP_URL", "http://localhost:3000"),
     keyPrefix: env.KEY_PREFIX ?? "aashi",
     trustedProxyHops: Number(env.TRUSTED_PROXY_HOPS ?? 0),
+    standInBehaviour: env.STANDIN_BEHAVIOUR === "realistic" ? "realistic" : "calm",
     production,
   };
 }

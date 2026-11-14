@@ -141,7 +141,7 @@ connected normally.
 
 On `main`: the **walking skeleton** (PR #1). On branches not yet merged (see section 7): sign-in on Better Auth
 with two-factor codes, Redis sessions and rate limiting; team invites and roles; the OpenAPI contract and generated
-web client; infrastructure code and the deploy workflow. **Nothing is deployed anywhere yet.**
+web client; infrastructure code and the deploy workflow; the Meta and AI stand-ins. **Nothing is deployed anywhere yet.**
 
 ```
 apps/api/        NestJS API
@@ -155,7 +155,9 @@ apps/web/        Next.js app: sign-in (with code step), onboarding, switcher, co
 packages/contracts/   Zod rules for inputs and replies; src/openapi.ts lists every endpoint; openapi.json is generated
 packages/db/          migrations, RLS policies, role bootstrap script, "every table has RLS" check
 infra/                OpenTofu for AWS Mumbai + Cloudflare; infra/README.md has the first-time steps
-docs/adr/             0001 tenancy and row-level security; 0002 sign-in on Better Auth. Read both before touching the database.
+  src/sockets/             the eight Meta and AI sockets, their stand-ins, and the module that plugs them in
+docs/adr/             0001 tenancy and row-level security; 0002 sign-in on Better Auth; 0003 sockets and stand-ins.
+                      Read 0001 and 0002 before touching the database.
 ```
 
 How tenancy works in the code:
@@ -200,8 +202,9 @@ and add it to `ACTIONS` in `apps/api/test/cross-customer.test.ts`. The contract 
 3. **OpenAPI:** done.
 4. **Request pipeline:** find the agency from the request's domain (needed for white-label).
 5. **Events:** outbox relay; a Temporal dev cluster with a "hello" workflow.
-6. **Stand-in service:** fake Meta (campaigns, leads, WhatsApp messages on a timer, realistic errors) and fake AI
-   (sample copy, placeholder images), with contract tests for every socket.
+6. **Stand-ins:** done for all eight sockets, with contract tests (ADR 0003). They run inside the API, not as a
+   separate service. Still to do: use them from a real module, and drive our webhook endpoints from them once
+   intake exists.
 7. **Frontend foundation:** design system components in Storybook with theming through colour variables; error
    handling, translations and analytics wiring.
 8. **Infrastructure and delivery:** OpenTofu code and the deploy/rollback workflow are written but have never been
