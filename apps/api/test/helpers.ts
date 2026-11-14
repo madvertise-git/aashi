@@ -6,6 +6,9 @@ import type TestAgent from "supertest/lib/agent";
 import { createApp } from "../src/app";
 
 export async function startApp(): Promise<INestApplication> {
+  // Each test file gets its own corner of Redis. Otherwise rate-limit counts from one file
+  // carry into the next, and the sign-up limit is reached part-way through the run.
+  process.env.KEY_PREFIX = `test-${randomUUID()}`;
   const app = await createApp();
   app.useLogger(false);
   await app.init();
