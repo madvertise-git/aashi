@@ -108,5 +108,6 @@ describe("sign-in rate limit", () => {
     expect(upper.status).toBe(429);
     const other = await request(app.getHttpServer()).post("/v1/auth/sign-in").send({ email: uniqueEmail(), password: "x" });
     expect(other.status).toBe(401);
-  });
+    // Twelve password checks are deliberately slow; allow for a busy machine.
+  }, 30_000);
 });

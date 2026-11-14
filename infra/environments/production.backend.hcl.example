@@ -1,0 +1,6 @@
+# Copy to production.backend.hcl. The bucket is created once by hand (README.md).
+bucket       = "aashi-tofu-state-<aws-account-id>"
+key          = "production/terraform.tfstate"
+region       = "ap-south-1"
+encrypt      = true
+use_lockfile = true

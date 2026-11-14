@@ -1,0 +1,118 @@
+name: Deploy
+
+# Run by hand from the Actions tab ("Run workflow"):
+#   deploy    builds the chosen commit, applies migrations, releases API then web, checks the site.
+#   rollback  re-releases an earlier image (give its commit SHA). No build, no migrations:
+#             migrations are written so the previous release still works against the new schema.
+#   bootstrap one-off, before the first deploy: creates the database roles.
+# The "production" environment should require a reviewer, so every run is approved by a person.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do
+        type: choice
+        options: [deploy, rollback, bootstrap]
+        default: deploy
+      image_tag:
+        description: "rollback only: the commit SHA of the release to go back to"
+        required: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # lets the job assume the AWS deploy role; no stored keys
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  REGISTRY: ${{ vars.ECR_REGISTRY }}
+  PREFIX: ${{ vars.NAME_PREFIX }}
+  CLUSTER: ${{ vars.ECS_CLUSTER }}
+  TAG: ${{ inputs.action == 'rollback' && inputs.image_tag || github.sha }}
+
+jobs:
+  build:
+    if: inputs.action != 'rollback'
+    runs-on: ubuntu-24.04-arm # the containers run on ARM
+    environment: production
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.PREFIX }}-${{ matrix.app }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+
+  release:
+    needs: build
+    # Runs after a successful build, or straight away for a rollback.
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Check the rollback image exists
+        if: inputs.action == 'rollback'
+        run: |
+          test -n "${{ inputs.image_tag }}" || { echo "::error::Give the commit SHA to roll back to."; exit 1; }
+          for app in api web; do
+            aws ecr describe-images --repository-name "$PREFIX-$app" --image-ids imageTag="$TAG" > /dev/null
+          done
+
+      - name: Register task definitions for this release
+        id: register
+        run: |
+          for family in api web tasks; do
+            repo=$([ "$family" = web ] && echo web || echo api)
+            arn=$(.github/scripts/register-task-definition.sh "$PREFIX-$family" "$REGISTRY/$PREFIX-$repo:$TAG")
+            echo "$family=$arn" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Create database roles (one-off)
+        if: inputs.action == 'bootstrap'
+        run: .github/scripts/run-task.sh "${{ steps.register.outputs.tasks }}" node --import tsx scripts/bootstrap.ts
+        env:
+          SUBNETS: ${{ vars.PRIVATE_SUBNETS }}
+          SECURITY_GROUP: ${{ vars.APP_SECURITY_GROUP }}
+
+      - name: Apply migrations
+        if: inputs.action != 'rollback'
+        run: .github/scripts/run-task.sh "${{ steps.register.outputs.tasks }}" node --import tsx scripts/migrate.ts
+        env:
+          SUBNETS: ${{ vars.PRIVATE_SUBNETS }}
+          SECURITY_GROUP: ${{ vars.APP_SECURITY_GROUP }}
+
+      - name: Release the API, then the web app
+        if: inputs.action != 'bootstrap'
+        run: |
+          .github/scripts/release-service.sh api "${{ steps.register.outputs.api }}"
+          .github/scripts/release-service.sh web "${{ steps.register.outputs.web }}"
+
+      - name: Check the live site
+        if: inputs.action != 'bootstrap'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "${{ vars.APP_URL }}/api/readyz"
+          curl --fail --silent --show-error --output /dev/null "${{ vars.APP_URL }}/sign-in"
+          echo "Released $TAG to ${{ vars.APP_URL }}" >> "$GITHUB_STEP_SUMMARY"

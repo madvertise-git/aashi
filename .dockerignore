@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/test-results
+**/playwright-report
+.git
+.github
+infra
+docs
+**/.env*
+**/.DS_Store

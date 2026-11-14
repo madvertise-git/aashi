@@ -1,9 +1,14 @@
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const apiUrl = process.env.API_URL ?? "http://localhost:4000";
 
 const config: NextConfig = {
   transpilePackages: ["@aashi/contracts"],
+  // A self-contained server for the container image.
+  output: "standalone",
+  // The repository root, so files from workspace packages are included.
+  outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   // The browser talks to the API through the web app's own address, so the
   // session cookie is first-party and no cross-site rules are needed.
   async rewrites() {

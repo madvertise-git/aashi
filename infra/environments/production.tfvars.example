@@ -1,0 +1,7 @@
+# Copy to production.tfvars and fill in. No secrets belong in this file:
+# the Cloudflare token is passed as TF_VAR_cloudflare_api_token.
+environment        = "production"
+domain             = "app.example.com"
+cloudflare_zone_id = "00000000000000000000000000000000"
+github_repository  = "your-org/aashi"
+alarm_email        = "alerts@example.com"
