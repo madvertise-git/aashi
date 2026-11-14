@@ -67,6 +67,7 @@ export function AppShell({ agencyId, accountId, children }: { agencyId?: string;
           )}
           <div className="ml-auto flex items-center gap-3 text-sm">
             <span className="hidden text-ink-muted sm:inline">{me.data.user.name}</span>
+            <Link href="/settings/security" className="text-ink-muted underline-offset-2 hover:underline">Security</Link>
             <button onClick={signOut} className="rounded-md border border-line px-3 py-1.5 hover:bg-canvas">Sign out</button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 // Typed view of the tables for queries. The SQL in migrations/ is the source of
 // truth (it also holds the security policies); keep the two in step.
-import { customType, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+// The sign-in tables (sessions, auth_*) belong to Better Auth and are not listed here.
+import { boolean, customType, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 const citext = customType<{ data: string }>({ dataType: () => "citext" });
 const utc = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -9,17 +10,9 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey(),
   email: citext("email").notNull(),
   name: text("name").notNull(),
-  passwordHash: text("password_hash").notNull(),
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
   createdAt: utc("created_at").notNull().defaultNow(),
   updatedAt: utc("updated_at").notNull().defaultNow(),
-});
-
-export const sessions = pgTable("sessions", {
-  id: uuid("id").primaryKey(),
-  userId: uuid("user_id").notNull(),
-  tokenHash: text("token_hash").notNull(),
-  expiresAt: utc("expires_at").notNull(),
-  createdAt: utc("created_at").notNull().defaultNow(),
 });
 
 export const agencies = pgTable("agencies", {

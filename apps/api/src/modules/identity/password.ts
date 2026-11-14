@@ -27,6 +27,3 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const actual = await derive(password, Buffer.from(salt, "base64url"), Number(n), Number(r), Number(p), expected.length);
   return timingSafeEqual(actual, expected);
 }
-
-/** Used when the email is unknown, so a wrong email takes as long as a wrong password. */
-export const DUMMY_HASH = await hashPassword(randomBytes(16).toString("hex"));

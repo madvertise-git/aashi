@@ -9,6 +9,8 @@ export default defineConfig({
     env: {
       DATABASE_URL:
         process.env.TEST_DATABASE_URL ?? "postgres://platform_app:app_dev_password@localhost:5432/aashi_test",
+      AUTH_DATABASE_URL:
+        process.env.TEST_AUTH_DATABASE_URL ?? "postgres://platform_auth:auth_dev_password@localhost:5432/aashi_test",
     },
   },
 });

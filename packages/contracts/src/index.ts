@@ -18,6 +18,13 @@ export const signInInput = z.object({
 });
 export type SignInInput = z.infer<typeof signInInput>;
 
+/** A 6-digit authenticator code, or a backup code. */
+export const codeInput = z.object({ code: z.string().trim().min(6, "Enter the code").max(32) });
+export type CodeInput = z.infer<typeof codeInput>;
+
+export const passwordInput = z.object({ password: z.string().min(1, "Password is required").max(200) });
+export type PasswordInput = z.infer<typeof passwordInput>;
+
 export const createAgencyInput = z.object({ name: name("Agency name") });
 export type CreateAgencyInput = z.infer<typeof createAgencyInput>;
 
@@ -58,7 +65,11 @@ export const listQuery = z.object({
 export type ListQuery = z.infer<typeof listQuery>;
 
 export type Role = "owner" | "admin" | "member";
-export interface User { id: string; email: string; name: string }
+export interface User { id: string; email: string; name: string; twoFactorEnabled: boolean }
+/** With two-factor on, the password is only step one: `user` is null until the code is verified. */
+export interface SignInResult { twoFactorRequired: boolean; user: User | null }
+/** Shown once when two-factor is set up: a link for the authenticator app, and one-time backup codes. */
+export interface TwoFactorSetup { totpUri: string; backupCodes: string[] }
 export interface Agency { id: string; name: string; role: Role }
 export interface Account { id: string; agencyId: string; name: string; createdAt: string }
 export interface Contact {

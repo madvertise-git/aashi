@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "DATABASE_OWNER_URL", "API_URL", "NODE_ENV", "PORT"],
+  "globalEnv": ["DATABASE_URL", "DATABASE_OWNER_URL", "AUTH_DATABASE_URL", "REDIS_URL", "AUTH_SECRET", "APP_URL", "APP_NAME", "KEY_PREFIX", "API_URL", "NODE_ENV", "PORT"],
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**", "!.next/cache/**"] },
     "typecheck": { "dependsOn": ["^typecheck"] },

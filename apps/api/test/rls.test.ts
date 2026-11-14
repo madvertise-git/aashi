@@ -6,7 +6,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTenant, startApp, type TenantFixture } from "./helpers";
 
-const TABLES = ["users", "sessions", "agencies", "memberships", "accounts", "contacts"];
+const TABLES = ["users", "agencies", "memberships", "accounts", "contacts"];
 
 let app: INestApplication;
 let pool: pg.Pool;
@@ -58,6 +58,26 @@ describe("row-level security", () => {
 
   it.each(TABLES)("a query with no context sees nothing in %s", async (table) => {
     expect(await withContext({}, (c) => count(c, table))).toBe(0);
+  });
+
+  it.each(["sessions", "auth_credentials", "auth_verifications", "auth_two_factors"])(
+    "the everyday role cannot read the sign-in table %s",
+    async (table) => {
+      await expect(withContext({ userId: a.agency.id }, (c) => count(c, table))).rejects.toThrow(/permission denied/);
+    },
+  );
+
+  it("the sign-in engine's role cannot bypass row-level security or reach customer data", async () => {
+    const auth = new pg.Pool({ connectionString: process.env.AUTH_DATABASE_URL, max: 1 });
+    try {
+      const { rows } = await auth.query("SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user");
+      expect(rows[0]).toEqual({ rolsuper: false, rolbypassrls: false });
+      for (const table of ["agencies", "memberships", "accounts", "contacts", "outbox"]) {
+        await expect(auth.query(`SELECT count(*) FROM ${table}`)).rejects.toThrow(/permission denied/);
+      }
+    } finally {
+      await auth.end();
+    }
   });
 
   it("the outbox cannot be read by the everyday role at all", async () => {

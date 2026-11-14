@@ -6,9 +6,11 @@ import { ZodError } from "zod";
 const TITLES: Record<number, [code: string, title: string]> = {
   400: ["bad_request", "Bad request"],
   401: ["unauthenticated", "Sign in required"],
+  403: ["forbidden", "Not allowed"],
   404: ["not_found", "Not found"],
   409: ["conflict", "Conflict"],
   422: ["validation_failed", "Validation failed"],
+  429: ["rate_limited", "Too many requests"],
 };
 
 /** An error with a stable code that screens can act on. */
