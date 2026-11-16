@@ -47,7 +47,7 @@ export default function SignIn() {
   if (needsCode) {
     const { errors, isSubmitting } = codeForm.formState;
     return (
-      <AuthLayout title="Enter your code" footer={<button className="text-brand underline" onClick={() => setNeedsCode(false)}>Back to sign in</button>}>
+      <AuthLayout title="Enter your code" subtitle="Two-factor sign-in is on for your account." footer={<button className="text-brand underline" onClick={() => setNeedsCode(false)}>Back to sign in</button>}>
         <form onSubmit={submitCode} noValidate className="flex flex-col gap-4">
           <Field
             label="Code"
@@ -67,7 +67,7 @@ export default function SignIn() {
 
   const { errors, isSubmitting } = form.formState;
   return (
-    <AuthLayout title="Sign in" footer={<>New here? <Link className="text-brand underline" href="/sign-up">Create an account</Link></>}>
+    <AuthLayout title="Sign in" subtitle="Welcome back. Pick up where you left off." footer={<>New here? <Link className="text-brand underline" href="/sign-up">Create an account</Link></>}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field label="Email" type="email" autoComplete="email" error={errors.email?.message} {...form.register("email")} />
         <Field label="Password" type="password" autoComplete="current-password" error={errors.password?.message} {...form.register("password")} />

@@ -3,12 +3,11 @@
 import { createInviteInput, type CreateInviteInput, type Invite } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
-import { Button, Card, Empty, Field, FormError } from "@/components/ui";
+import { Avatar, Badge, Button, Card, Empty, Field, FormError, PageHeader } from "@/components/ui";
 import { client, ApiError } from "@/lib/api";
 import { keys, useInvites, useMe, useMembers } from "@/lib/queries";
 
@@ -58,11 +57,7 @@ function Team({ agencyId }: { agencyId: string }) {
 
   return (
     <>
-      <h1 className="mb-1 text-2xl font-semibold">Team</h1>
-      <p className="mb-6 text-sm text-ink-muted">
-        People in this agency can work in all of its client accounts.{" "}
-        <Link className="text-brand underline" href={`/agencies/${agencyId}`}>Back to client accounts</Link>
-      </p>
+      <PageHeader title="Team" description="People in this agency can work in all of its client accounts." />
       <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <div className="flex flex-col gap-6">
           <Card title="Members">
@@ -72,8 +67,11 @@ function Team({ agencyId }: { agencyId: string }) {
               <ul aria-label="Members" className="divide-y divide-line">
                 {members.data.map((m) => (
                   <li key={m.userId} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
-                    <span><span className="font-medium">{m.name}</span> <span className="text-ink-muted">{m.email}</span></span>
-                    <span className="text-ink-muted">{ROLE_NAMES[m.role]}</span>
+                    <span className="flex items-center gap-3">
+                      <Avatar name={m.name} size="sm" />
+                      <span><span className="font-medium">{m.name}</span> <span className="text-ink-muted">{m.email}</span></span>
+                    </span>
+                    <Badge tone={m.role === "member" ? "neutral" : "brand"}>{ROLE_NAMES[m.role]}</Badge>
                   </li>
                 ))}
               </ul>

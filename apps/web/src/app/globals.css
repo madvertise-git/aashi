@@ -1,32 +1,64 @@
 @import "tailwindcss";
 
 /* White-label by design: every colour comes from these variables, so an
-   agency's branding is a change of values here, never a change of components. */
+   agency's branding is a change of values here, never a change of components.
+   The request pipeline will set them per agency once domains are resolved. */
 :root {
   --brand: #0f766e;
   --brand-strong: #115e59;
+  --brand-soft: #e6f4f2;
   --brand-contrast: #ffffff;
+  --accent: #f59e0b;
   --surface: #ffffff;
-  --canvas: #f6f8f8;
-  --ink: #12282b;
-  --ink-muted: #5b6b6e;
-  --line: #dfe6e6;
+  --canvas: #f5f7f7;
+  --ink: #10201f;
+  --ink-muted: #5d6b6a;
+  --line: #e1e7e6;
   --danger: #b42318;
+  --success: #0e7a43;
+  /* The navigation rail: a dark version of the brand. */
+  --rail: #0c2b29;
+  --rail-ink: #dcebe9;
+  --rail-muted: #8fb0ac;
+  --rail-active: #17443f;
 }
 
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
   --color-brand-contrast: var(--brand-contrast);
+  --color-accent: var(--accent);
   --color-surface: var(--surface);
   --color-canvas: var(--canvas);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-line: var(--line);
   --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-active: var(--rail-active);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: 0 1px 2px rgb(16 32 31 / 0.04), 0 1px 3px rgb(16 32 31 / 0.06);
+  --shadow-lift: 0 8px 24px rgb(16 32 31 / 0.12);
 }
 
 body {
   background: var(--canvas);
   color: var(--ink);
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Numbers in tables and tiles line up. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

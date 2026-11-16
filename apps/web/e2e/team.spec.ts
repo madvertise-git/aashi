@@ -14,6 +14,8 @@ test("an admin invites a teammate, who signs up from the link and joins as a mem
   await page.getByRole("button", { name: "Create account" }).click();
   await page.getByLabel("Agency name").fill("Madvertise");
   await page.getByRole("button", { name: "Create agency" }).click();
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await expect(page.getByText("No client accounts yet")).toBeVisible();
   await page.getByRole("link", { name: "Team" }).click();
   await expect(page.getByRole("list", { name: "Members" }).getByRole("listitem")).toHaveCount(1);
   await page.getByLabel("Their email").fill(teammate);

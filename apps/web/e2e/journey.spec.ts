@@ -17,19 +17,19 @@ test("sign up, create an agency, add a client account, add a contact", async ({ 
   await page.getByLabel("Password").fill("a long enough password");
   await page.getByRole("button", { name: "Create account" }).click();
 
-  // Create the agency.
+  // Onboarding: name the agency, then add the first client and land on its dashboard.
   await expect(page.getByRole("heading", { name: "Set up your agency" })).toBeVisible();
   await page.getByLabel("Agency name").fill("Madvertise");
   await page.getByRole("button", { name: "Create agency" }).click();
-  await expect(page.getByRole("heading", { name: "Madvertise" })).toBeVisible();
-  await expect(page.getByText("No client accounts yet")).toBeVisible();
-
-  // Add a client account and open it.
+  await expect(page.getByRole("heading", { name: "Add your first client" })).toBeVisible();
   await page.getByLabel("Client name").fill("Sunrise Dental");
   await page.getByRole("button", { name: "Add client account" }).click();
-  await page.getByRole("link", { name: /Sunrise Dental/ }).click();
   await expect(page.getByRole("heading", { name: "Sunrise Dental" })).toBeVisible();
   await expect(page.getByLabel("Client account")).toHaveValue(/.+/);
+  // A new client starts with a checklist and nothing counted yet.
+  await expect(page.getByText("0 of 3 done")).toBeVisible();
+  await page.getByRole("link", { name: "Contacts", exact: true }).click();
+  await expect(page.getByText("No contacts yet")).toBeVisible();
 
   // Add a contact. A bare Indian mobile number is shown in international format.
   await page.getByLabel("First name").fill("Rahul");
@@ -45,13 +45,21 @@ test("sign up, create an agency, add a client account, add a contact", async ({ 
   await page.getByRole("button", { name: "Add contact" }).click();
   await expect(page.getByText("A contact with this phone number already exists here.")).toBeVisible();
 
-  // Sign out, sign back in: the data is still there.
+  // The dashboard now counts the contact and ticks the first step.
+  await page.getByRole("link", { name: "Dashboard" }).click();
+  await expect(page.getByText("1 of 3 done")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Latest contacts" })).toContainText("Rahul Verma");
+
+  // Sign out, sign back in: the agency's home lists the client with its numbers.
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("a long enough password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Madvertise" })).toBeVisible();
-  await page.getByRole("link", { name: /Sunrise Dental/ }).click();
+  const card = page.getByRole("link", { name: /Sunrise Dental/ });
+  await expect(card).toContainText("Contacts1");
+  await card.click();
+  await page.getByRole("link", { name: "Contacts", exact: true }).click();
   await expect(page.getByRole("row", { name: /Rahul Verma/ })).toBeVisible();
 });

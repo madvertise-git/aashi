@@ -26,7 +26,7 @@ test("switch on two-factor sign-in, then sign in with a code", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Set up your agency" })).toBeVisible();
 
   // Set up: password, then the key and backup codes, then a code to confirm.
-  await page.getByRole("link", { name: "Security" }).click();
+  await page.goto("/settings/security");
   await expect(page.getByText(/^Off\./)).toBeVisible();
   await page.getByLabel("Your password").fill(password);
   await page.getByRole("button", { name: "Set up" }).click();

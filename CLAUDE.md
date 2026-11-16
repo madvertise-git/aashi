@@ -151,6 +151,8 @@ apps/api/        NestJS API
   src/modules/identity/    sign-up, sign-in, two-factor codes: Better Auth behind our own /v1/auth addresses
   src/modules/tenancy/     agencies, client accounts, membership checks, team invites, roles
   src/modules/crm/         contacts, companies, tags, notes, custom fields
+  src/modules/pipelines/   pipelines, stages, deals
+  src/modules/reports/     read-only numbers for the dashboards
   test/                    journey, sign-in, invites, contract, cross-customer harness, row-level security tests
 apps/web/        Next.js app: sign-in (with code step), onboarding, switcher, contacts, team, security; e2e/
 packages/contracts/   Zod rules for inputs and replies; src/openapi.ts lists every endpoint; openapi.json is generated
@@ -216,6 +218,18 @@ and add it to `ACTIONS` in `apps/api/test/cross-customer.test.ts`. The contract 
 Phase 3 is done when: the skeleton is live in production; the pipeline runs under 10 minutes with rollback tested;
 the RLS check and cross-customer harness are green; stand-ins serve fake leads, messages and AI output; dashboards
 and alerts exist for every service.
+
+### Frontend (started)
+The web app has a navigation rail (agency and client switchers, client pages, agency pages), a split sign-in and
+sign-up, a two-step onboarding (agency, first client), an agency home with one card per client, a client
+dashboard, and a drag-and-drop pipeline board. Building blocks are in `apps/web/src/components/ui.tsx`
+(`PageHeader`, `Stat`, `Card`, `Empty`, `Badge`, `Avatar`, `Skeleton`); money and time formatting is in
+`apps/web/src/lib/format.ts`. Colours and the font come from variables in `globals.css`. Not yet done: shadcn/ui,
+Storybook, translations, analytics, per-agency theming from the domain.
+
+### Pipelines (started)
+Done: one pipeline per client with the standard stages, deals with a value, moving deals, dashboard summaries.
+Still to do: editing stages, more than one pipeline on screen, reordering within a stage in the UI, deal detail.
 
 ### Version one CRM (started)
 Done: contacts (create, read, edit, delete), companies, tags, notes, custom fields, with screens.

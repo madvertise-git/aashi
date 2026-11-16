@@ -13,7 +13,7 @@ test("a contact gets a company, a custom field, a tag and a note", async ({ page
   await page.getByRole("button", { name: "Create agency" }).click();
   await page.getByLabel("Client name").fill("Sunrise Dental");
   await page.getByRole("button", { name: "Add client account" }).click();
-  await page.getByRole("link", { name: /Sunrise Dental/ }).click();
+  await expect(page.getByRole("heading", { name: "Sunrise Dental" })).toBeVisible();
 
   // A company and a custom field for this client account.
   await page.getByRole("link", { name: "Companies" }).click();
@@ -24,7 +24,6 @@ test("a contact gets a company, a custom field, a tag and a note", async ({ page
   await page.getByLabel("Website").fill("https://lotus.example.test");
   await page.getByRole("button", { name: "Add company" }).click();
   await expect(page.getByRole("list", { name: "Companies" })).toContainText("Lotus Clinics");
-  await page.getByRole("link", { name: "← Contacts" }).click();
 
   await page.getByRole("link", { name: "Custom fields" }).click();
   await page.getByLabel("Field name").fill("Plan");
@@ -32,7 +31,7 @@ test("a contact gets a company, a custom field, a tag and a note", async ({ page
   await page.getByLabel("Choices").fill("Basic, Premium");
   await page.getByRole("button", { name: "Add field" }).click();
   await expect(page.getByRole("list", { name: "Custom fields" })).toContainText("Plan · Contacts · Choice from a list: Basic, Premium");
-  await page.getByRole("link", { name: "← Contacts" }).click();
+  await page.getByRole("link", { name: "Contacts", exact: true }).click();
 
   // A contact, then its own page.
   await page.getByLabel("First name").fill("Rahul");
@@ -61,7 +60,7 @@ test("a contact gets a company, a custom field, a tag and a note", async ({ page
   await page.reload();
   await expect(page.getByLabel("Company")).toHaveValue(/.+/);
   await expect(page.getByLabel("Plan")).toHaveValue("Premium");
-  await page.getByRole("link", { name: "← All contacts" }).click();
+  await page.getByRole("link", { name: "Contacts", exact: true }).click();
   await expect(page.getByRole("row", { name: /Rahul Verma-Rao/ })).toContainText("Hot lead");
 
   // Delete the contact.
