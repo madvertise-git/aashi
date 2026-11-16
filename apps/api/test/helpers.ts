@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
-import type { Account, Agency, Company, Contact, CustomField, Invite, Note, Tag } from "@aashi/contracts";
+import type { Account, Agency, Company, Contact, CustomField, Deal, Invite, Note, Pipeline, Tag } from "@aashi/contracts";
 import { Mailer } from "../src/platform";
 import request from "supertest";
 import type TestAgent from "supertest/lib/agent";
@@ -32,6 +32,9 @@ export interface TenantFixture {
   note: Note;
   /** A text field for contacts. */
   field: CustomField;
+  pipeline: Pipeline;
+  /** A ₹50,000 deal for `contact` in the pipeline's first stage. */
+  deal: Deal;
 }
 
 export const uniqueEmail = () => `user-${randomUUID()}@example.test`;
@@ -63,7 +66,14 @@ export async function createTenant(app: INestApplication, label: string): Promis
   const field = (
     await agent.post(`${base}/custom-fields`).send({ entity: "contact", label: `${label} source`, type: "text" }).expect(201)
   ).body as CustomField;
-  return { agent, email, password, agency, account, contact, invite, company, tag, note, field };
+  const pipeline = (await agent.post(`${base}/pipelines`).send({ name: "Sales" }).expect(201)).body as Pipeline;
+  const deal = (
+    await agent
+      .post(`${base}/deals`)
+      .send({ pipelineId: pipeline.id, stageId: pipeline.stages[0]!.id, title: `${label} deal`, valueMinor: 5_000_000, contactId: contact.id })
+      .expect(201)
+  ).body as Deal;
+  return { agent, email, password, agency, account, contact, invite, company, tag, note, field, pipeline, deal };
 }
 
 /** The code an authenticator app would show right now for this set-up link (RFC 6238, SHA-1, 6 digits, 30 s). */

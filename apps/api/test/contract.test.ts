@@ -62,6 +62,12 @@ describe("the OpenAPI contract", () => {
     matches(c.tag.array(), await get(`/v1/accounts/${t.account.id}/tags`));
     matches(c.page(c.note), await get(`/v1/accounts/${t.account.id}/contacts/${t.contact.id}/notes`));
     matches(c.customField.array(), await get(`/v1/accounts/${t.account.id}/custom-fields`));
+    matches(c.pipeline.array(), await get(`/v1/accounts/${t.account.id}/pipelines`));
+    matches(c.deal.array(), await get(`/v1/accounts/${t.account.id}/pipelines/${t.pipeline.id}/deals`));
+    matches(c.accountSummary, await get(`/v1/accounts/${t.account.id}/summary`));
+    matches(c.agencySummary, await get(`/v1/agencies/${t.agency.id}/summary`));
+    matches(c.pipeline, t.pipeline);
+    matches(c.deal, t.deal);
     matches(c.company, t.company);
     matches(c.tag, t.tag);
     matches(c.note, t.note);

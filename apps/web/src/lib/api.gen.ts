@@ -492,6 +492,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/accounts/{accountId}/pipelines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The account's pipelines with their stages, left to right. */
+        get: operations["listPipelines"];
+        put?: never;
+        /** Create a pipeline with the standard sales stages. Admins and owners only. */
+        post: operations["createPipeline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounts/{accountId}/pipelines/{pipelineId}/deals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every deal on a pipeline's board, in board order (at most 1,000). */
+        get: operations["listDeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounts/{accountId}/deals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a deal at the bottom of a stage. */
+        post: operations["createDeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounts/{accountId}/deals/{dealId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a deal. */
+        delete: operations["deleteDeal"];
+        options?: never;
+        head?: never;
+        /** Change a deal, or move it to another stage or place. */
+        patch: operations["updateDeal"];
+        trace?: never;
+    };
+    "/v1/accounts/{accountId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The numbers on a client account's dashboard. */
+        get: operations["accountSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agencies/{agencyId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each client account's headline numbers, for the agency's home page (first 100 accounts). */
+        get: operations["agencySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -735,6 +839,131 @@ export interface components {
             /** @enum {string} */
             type: "text" | "number" | "date" | "boolean" | "select";
             options: string[] | null;
+        };
+        PipelineList: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            stages: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                position: number;
+                /** @enum {string} */
+                kind: "open" | "won" | "lost";
+            }[];
+        }[];
+        Pipeline: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            stages: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                position: number;
+                /** @enum {string} */
+                kind: "open" | "won" | "lost";
+            }[];
+        };
+        DealList: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pipelineId: string;
+            /** Format: uuid */
+            stageId: string;
+            title: string;
+            valueMinor: number;
+            currency: string;
+            position: number;
+            contactId: string | null;
+            contactName: string | null;
+            closedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        }[];
+        Deal: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pipelineId: string;
+            /** Format: uuid */
+            stageId: string;
+            title: string;
+            valueMinor: number;
+            currency: string;
+            position: number;
+            contactId: string | null;
+            contactName: string | null;
+            closedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AccountSummary: {
+            contacts: {
+                total: number;
+                last7Days: number;
+                previous7Days: number;
+            };
+            companies: number;
+            deals: {
+                open: {
+                    count: number;
+                    valueMinor: number;
+                };
+                won: {
+                    count: number;
+                    valueMinor: number;
+                };
+                lost: {
+                    count: number;
+                    valueMinor: number;
+                };
+            };
+            stages: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                kind: "open" | "won" | "lost";
+                count: number;
+                valueMinor: number;
+            }[];
+            contactsByDay: {
+                date: string;
+                count: number;
+            }[];
+            recentContacts: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            recentDeals: {
+                /** Format: uuid */
+                id: string;
+                title: string;
+                valueMinor: number;
+                stageName: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        AgencySummary: {
+            members: number;
+            accounts: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** Format: date-time */
+                createdAt: string;
+                contacts: number;
+                openDeals: number;
+                openValueMinor: number;
+                wonValueMinor: number;
+            }[];
         };
     };
     responses: never;
@@ -2692,6 +2921,393 @@ export interface operations {
             };
             /** @description Signed in, but this role may not do that. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listPipelines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipelineList"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createPipeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pipeline"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Signed in, but this role may not do that. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The input failed validation; `errors` lists each problem. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listDeals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+                pipelineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DealList"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createDeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    pipelineId: string;
+                    /** Format: uuid */
+                    stageId: string;
+                    title: string;
+                    /** @default 0 */
+                    valueMinor?: number;
+                    contactId?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Success. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deal"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The input failed validation; `errors` lists each problem. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteDeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+                dealId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. No content. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateDeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+                dealId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    valueMinor?: number;
+                    contactId?: string | null;
+                    /** Format: uuid */
+                    stageId?: string;
+                    position?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deal"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The input failed validation; `errors` lists each problem. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    accountSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSummary"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not found. Other customers' data always looks like this. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    agencySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agencyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencySummary"];
+                };
+            };
+            /** @description Not signed in, or the sign-in details are wrong. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
