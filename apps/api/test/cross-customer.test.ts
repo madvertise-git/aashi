@@ -42,6 +42,14 @@ const ACTIONS: Action[] = [
   { name: "list custom fields", method: "get", path: (o) => `/v1/accounts/${o.account.id}/custom-fields` },
   { name: "create custom field", method: "post", path: (o) => `/v1/accounts/${o.account.id}/custom-fields`, body: { entity: "contact", label: "Intruder", type: "text" } },
   { name: "delete custom field", method: "delete", path: (o) => `/v1/accounts/${o.account.id}/custom-fields/${o.field.id}` },
+  { name: "list pipelines", method: "get", path: (o) => `/v1/accounts/${o.account.id}/pipelines` },
+  { name: "create pipeline", method: "post", path: (o) => `/v1/accounts/${o.account.id}/pipelines`, body: { name: "Intruder" } },
+  { name: "list deals", method: "get", path: (o) => `/v1/accounts/${o.account.id}/pipelines/${o.pipeline.id}/deals` },
+  { name: "create deal", method: "post", path: (o) => `/v1/accounts/${o.account.id}/deals`, body: { pipelineId: crypto.randomUUID(), stageId: crypto.randomUUID(), title: "Intruder" } },
+  { name: "update deal", method: "patch", path: (o) => `/v1/accounts/${o.account.id}/deals/${o.deal.id}`, body: { title: "Hacked" } },
+  { name: "delete deal", method: "delete", path: (o) => `/v1/accounts/${o.account.id}/deals/${o.deal.id}` },
+  { name: "account summary", method: "get", path: (o) => `/v1/accounts/${o.account.id}/summary` },
+  { name: "agency summary", method: "get", path: (o) => `/v1/agencies/${o.agency.id}/summary` },
 ];
 
 // The quieter attack: the caller's own account in the address, another customer's record ID after it.
@@ -58,6 +66,9 @@ const MIXED: Action[] = [
   { name: "delete their company", method: "delete", path: (o) => `/companies/${o.company.id}` },
   { name: "delete their tag", method: "delete", path: (o) => `/tags/${o.tag.id}` },
   { name: "delete their custom field", method: "delete", path: (o) => `/custom-fields/${o.field.id}` },
+  { name: "read their board", method: "get", path: (o) => `/pipelines/${o.pipeline.id}/deals` },
+  { name: "update their deal", method: "patch", path: (o) => `/deals/${o.deal.id}`, body: { title: "Hacked" } },
+  { name: "delete their deal", method: "delete", path: (o) => `/deals/${o.deal.id}` },
 ];
 
 let app: INestApplication;
@@ -99,6 +110,14 @@ describe("agency A using agency B's IDs", () => {
     // Exactly what a made-up company ID gets.
     const madeUp = await a.agent.patch(`${mine}/contacts/${a.contact.id}`).send({ companyId: crypto.randomUUID() });
     expect(madeUp.body).toEqual(moved.body);
+    // A deal cannot be created in, or moved into, their pipeline, or linked to their contact.
+    const theirStage = b.pipeline.stages[1]!.id;
+    await a.agent.post(`${mine}/deals`).send({ pipelineId: b.pipeline.id, stageId: theirStage, title: "x" }).expect(422);
+    await a.agent.post(`${mine}/deals`).send({ pipelineId: a.pipeline.id, stageId: theirStage, title: "x" }).expect(422);
+    await a.agent.patch(`${mine}/deals/${a.deal.id}`).send({ stageId: theirStage }).expect(422);
+    const linked = await a.agent.patch(`${mine}/deals/${a.deal.id}`).send({ contactId: b.contact.id });
+    expect(linked.status).toBe(422);
+    expect(linked.body.code).toBe("contact_not_found");
     const filtered = await a.agent.get(`${mine}/contacts?companyId=${b.company.id}`).expect(200);
     expect(filtered.body.items).toEqual([]);
   });
@@ -110,6 +129,11 @@ describe("agency A using agency B's IDs", () => {
     expect((await b.agent.get(`${theirs}/tags`).expect(200)).body).toEqual([b.tag]);
     expect((await b.agent.get(`${theirs}/contacts/${b.contact.id}/notes`).expect(200)).body.items).toEqual([b.note]);
     expect((await b.agent.get(`${theirs}/custom-fields`).expect(200)).body).toEqual([b.field]);
+    expect((await b.agent.get(`${theirs}/pipelines/${b.pipeline.id}/deals`).expect(200)).body).toEqual([b.deal]);
+    // Agency A's dashboards count only agency A's data.
+    const summary = (await a.agent.get(`/v1/agencies/${a.agency.id}/summary`).expect(200)).body;
+    expect(summary.accounts.map((x: { id: string }) => x.id)).toEqual([a.account.id]);
+    expect(summary.accounts[0]).toMatchObject({ contacts: 1, openDeals: 1, openValueMinor: 5_000_000 });
     const accounts = (await b.agent.get(`/v1/agencies/${b.agency.id}/accounts`).expect(200)).body;
     expect(accounts).toEqual([b.account]);
     const contacts = (await b.agent.get(`/v1/accounts/${b.account.id}/contacts`).expect(200)).body;

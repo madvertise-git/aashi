@@ -11,7 +11,7 @@ export interface Operation {
   /** OpenAPI style, e.g. /v1/accounts/{accountId}/contacts */
   path: string;
   id: string;
-  tag: "Health" | "Sign-in" | "Agencies" | "Team" | "Contacts" | "Companies" | "Tags" | "Notes" | "Custom fields";
+  tag: "Health" | "Sign-in" | "Agencies" | "Team" | "Contacts" | "Companies" | "Tags" | "Notes" | "Custom fields" | "Pipelines" | "Dashboards";
   summary: string;
   /** False for the few routes that work without signing in. */
   auth?: boolean;
@@ -76,6 +76,16 @@ export const operations: Operation[] = [
   { method: "get", path: "/v1/accounts/{accountId}/custom-fields", id: "listCustomFields", tag: "Custom fields", summary: "The extra fields this account has defined.", status: 200, response: list("CustomFieldList", c.customField), errors: [404] },
   { method: "post", path: "/v1/accounts/{accountId}/custom-fields", id: "createCustomField", tag: "Custom fields", summary: "Define an extra field for contacts or companies. Admins and owners only.", body: c.createCustomFieldInput, status: 201, response: ["CustomField", c.customField], errors: [403, 404, 409] },
   { method: "delete", path: "/v1/accounts/{accountId}/custom-fields/{fieldId}", id: "deleteCustomField", tag: "Custom fields", summary: "Remove a field and every value stored for it. Admins and owners only.", status: 204, errors: [403, 404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/pipelines", id: "listPipelines", tag: "Pipelines", summary: "The account's pipelines with their stages, left to right.", status: 200, response: list("PipelineList", c.pipeline), errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/pipelines", id: "createPipeline", tag: "Pipelines", summary: "Create a pipeline with the standard sales stages. Admins and owners only.", body: c.createPipelineInput, status: 201, response: ["Pipeline", c.pipeline], errors: [403, 404] },
+  { method: "get", path: "/v1/accounts/{accountId}/pipelines/{pipelineId}/deals", id: "listDeals", tag: "Pipelines", summary: "Every deal on a pipeline's board, in board order (at most 1,000).", status: 200, response: list("DealList", c.deal), errors: [404] },
+  { method: "post", path: "/v1/accounts/{accountId}/deals", id: "createDeal", tag: "Pipelines", summary: "Add a deal at the bottom of a stage.", body: c.createDealInput, status: 201, response: ["Deal", c.deal], errors: [404] },
+  { method: "patch", path: "/v1/accounts/{accountId}/deals/{dealId}", id: "updateDeal", tag: "Pipelines", summary: "Change a deal, or move it to another stage or place.", body: c.updateDealInput, status: 200, response: ["Deal", c.deal], errors: [404] },
+  { method: "delete", path: "/v1/accounts/{accountId}/deals/{dealId}", id: "deleteDeal", tag: "Pipelines", summary: "Delete a deal.", status: 204, errors: [404] },
+
+  { method: "get", path: "/v1/accounts/{accountId}/summary", id: "accountSummary", tag: "Dashboards", summary: "The numbers on a client account's dashboard.", status: 200, response: ["AccountSummary", c.accountSummary], errors: [404] },
+  { method: "get", path: "/v1/agencies/{agencyId}/summary", id: "agencySummary", tag: "Dashboards", summary: "Each client account's headline numbers, for the agency's home page (first 100 accounts).", status: 200, response: ["AgencySummary", c.agencySummary], errors: [404] },
 ];
 
 type Json = Record<string, unknown>;

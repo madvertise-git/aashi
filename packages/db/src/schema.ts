@@ -1,7 +1,7 @@
 // Typed view of the tables for queries. The SQL in migrations/ is the source of
 // truth (it also holds the security policies); keep the two in step.
 // The sign-in tables (sessions, auth_*) belong to Better Auth and are not listed here.
-import { boolean, customType, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, customType, doublePrecision, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 const citext = customType<{ data: string }>({ dataType: () => "citext" });
 /** Custom field values on a contact or company, keyed by the field's key. */
@@ -115,6 +115,41 @@ export const customFields = pgTable("custom_fields", {
   type: text("type", { enum: ["text", "number", "date", "boolean", "select"] }).notNull(),
   options: jsonb("options").$type<string[]>(),
   createdAt: utc("created_at").notNull().defaultNow(),
+});
+
+export const pipelines = pgTable("pipelines", {
+  id: uuid("id").primaryKey(),
+  agencyId: uuid("agency_id").notNull(),
+  accountId: uuid("account_id").notNull(),
+  name: text("name").notNull(),
+  createdAt: utc("created_at").notNull().defaultNow(),
+});
+
+export const pipelineStages = pgTable("pipeline_stages", {
+  id: uuid("id").primaryKey(),
+  agencyId: uuid("agency_id").notNull(),
+  accountId: uuid("account_id").notNull(),
+  pipelineId: uuid("pipeline_id").notNull(),
+  name: text("name").notNull(),
+  position: integer("position").notNull(),
+  kind: text("kind", { enum: ["open", "won", "lost"] }).notNull().default("open"),
+});
+
+export const deals = pgTable("deals", {
+  id: uuid("id").primaryKey(),
+  agencyId: uuid("agency_id").notNull(),
+  accountId: uuid("account_id").notNull(),
+  pipelineId: uuid("pipeline_id").notNull(),
+  stageId: uuid("stage_id").notNull(),
+  contactId: uuid("contact_id"),
+  title: text("title").notNull(),
+  // Whole paise. Safe as a JavaScript number up to about ₹90 lakh crore.
+  valueMinor: bigint("value_minor", { mode: "number" }).notNull().default(0),
+  currency: text("currency").notNull().default("INR"),
+  position: doublePrecision("position").notNull(),
+  closedAt: utc("closed_at"),
+  createdAt: utc("created_at").notNull().defaultNow(),
+  updatedAt: utc("updated_at").notNull().defaultNow(),
 });
 
 export const outbox = pgTable("outbox", {

@@ -6,7 +6,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTenant, startApp, type TenantFixture } from "./helpers";
 
-const TABLES = ["users", "invites", "agencies", "memberships", "accounts", "contacts", "companies", "tags", "contact_tags", "notes", "custom_fields"];
+const TABLES = ["users", "invites", "agencies", "memberships", "accounts", "contacts", "companies", "tags", "contact_tags", "notes", "custom_fields", "pipelines", "pipeline_stages", "deals"];
 
 let app: INestApplication;
 let pool: pg.Pool;
@@ -121,7 +121,7 @@ describe("row-level security", () => {
     });
   });
 
-  it.each(["companies", "tags", "contact_tags", "notes", "custom_fields"])(
+  it.each(["companies", "tags", "contact_tags", "notes", "custom_fields", "pipelines", "pipeline_stages", "deals"])(
     "%s need the client account as well as the agency, and show only that account's rows",
     async (table) => {
       expect(await withContext({ agencyId: a.agency.id }, (c) => count(c, table))).toBe(0);
@@ -155,6 +155,15 @@ describe("row-level security", () => {
     ).rejects.toThrow(/foreign key/);
     await expect(
       withContext(ctx, (c) => c.query("UPDATE contacts SET company_id = $1 WHERE id = $2", [b.company.id, a.contact.id])),
+    ).rejects.toThrow(/foreign key/);
+    // A deal cannot sit in another account's stage, or in a stage of a different pipeline.
+    await expect(
+      withContext(ctx, (c) =>
+        c.query(
+          "INSERT INTO deals (id, agency_id, account_id, pipeline_id, stage_id, title, position) VALUES (gen_random_uuid(), $1, $2, $3, $4, 'x', 1)",
+          [a.agency.id, a.account.id, a.pipeline.id, b.pipeline.stages[0]!.id],
+        ),
+      ),
     ).rejects.toThrow(/foreign key/);
     // Agency B's stamp from agency A's context: the policy refuses it.
     await expect(

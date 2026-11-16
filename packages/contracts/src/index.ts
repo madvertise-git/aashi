@@ -126,6 +126,32 @@ export const createCustomFieldInput = z
   });
 export type CreateCustomFieldInput = z.infer<typeof createCustomFieldInput>;
 
+export const createPipelineInput = z.object({ name: name("Pipeline name") });
+export type CreatePipelineInput = z.infer<typeof createPipelineInput>;
+
+/** Whole paise, never decimals. ₹1 = 100. */
+const valueMinor = z.int("Use whole paise").min(0).max(1_000_000_000_000);
+
+export const createDealInput = z.object({
+  pipelineId: z.uuid(),
+  stageId: z.uuid(),
+  title: name("Deal name"),
+  valueMinor: valueMinor.default(0),
+  contactId: z.uuid().nullable().optional(),
+});
+export type CreateDealInput = z.infer<typeof createDealInput>;
+
+/** Only the fields sent are changed. Moving a deal is a change of `stageId` and/or `position`. */
+export const updateDealInput = z.object({
+  title: name("Deal name").optional(),
+  valueMinor: valueMinor.optional(),
+  contactId: z.uuid().nullable().optional(),
+  stageId: z.uuid().optional(),
+  /** Where the deal sits in its stage: lower is higher up. Send a number between its two new neighbours. */
+  position: z.number().optional(),
+});
+export type UpdateDealInput = z.infer<typeof updateDealInput>;
+
 export const listQuery = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -225,6 +251,53 @@ export const customField = z.object({
   options: z.array(z.string()).nullable(),
 });
 export type CustomField = z.infer<typeof customField>;
+
+export const stage = z.object({ id, name: z.string(), position: z.int(), kind: z.enum(["open", "won", "lost"]) });
+export type Stage = z.infer<typeof stage>;
+
+export const pipeline = z.object({ id, name: z.string(), stages: z.array(stage) });
+export type Pipeline = z.infer<typeof pipeline>;
+
+export const deal = z.object({
+  id,
+  pipelineId: id,
+  stageId: id,
+  title: z.string(),
+  valueMinor: z.int(),
+  currency: z.string(),
+  position: z.number(),
+  contactId: id.nullable(),
+  /** The contact's name, for showing on the card. */
+  contactName: z.string().nullable(),
+  closedAt: timestamp.nullable(),
+  createdAt: timestamp,
+});
+export type Deal = z.infer<typeof deal>;
+
+const money = z.object({ count: z.int(), valueMinor: z.int() });
+
+/** The numbers on a client account's dashboard. */
+export const accountSummary = z.object({
+  contacts: z.object({ total: z.int(), last7Days: z.int(), previous7Days: z.int() }),
+  companies: z.int(),
+  deals: z.object({ open: money, won: money, lost: money }),
+  /** Open and closed stages of the first pipeline, left to right. Empty until a pipeline exists. */
+  stages: z.array(z.object({ id, name: z.string(), kind: stage.shape.kind, count: z.int(), valueMinor: z.int() })),
+  /** New contacts per day for the last 14 days, oldest first, in India time. Days with none are included as zero. */
+  contactsByDay: z.array(z.object({ date: z.string(), count: z.int() })),
+  recentContacts: z.array(z.object({ id, name: z.string(), createdAt: timestamp })),
+  recentDeals: z.array(z.object({ id, title: z.string(), valueMinor: z.int(), stageName: z.string(), updatedAt: timestamp })),
+});
+export type AccountSummary = z.infer<typeof accountSummary>;
+
+/** The numbers on an agency's home page: one row per client account. */
+export const agencySummary = z.object({
+  members: z.int(),
+  accounts: z.array(
+    z.object({ id, name: z.string(), createdAt: timestamp, contacts: z.int(), openDeals: z.int(), openValueMinor: z.int(), wonValueMinor: z.int() }),
+  ),
+});
+export type AgencySummary = z.infer<typeof agencySummary>;
 
 export const me = z.object({ user, agencies: z.array(agency) });
 export type Me = z.infer<typeof me>;
