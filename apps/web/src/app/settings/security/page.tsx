@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
-import { Button, Card, Field, FormError } from "@/components/ui";
+import { Button, Card, Field, FormError, PageHeader } from "@/components/ui";
 import { client } from "@/lib/api";
 import { keys, useMe } from "@/lib/queries";
 
@@ -90,10 +90,13 @@ function TwoFactor() {
 }
 
 export default function Security() {
+  const me = useMe();
   return (
-    <AppShell>
-      <h1 className="mb-6 text-xl font-semibold">Security</h1>
-      <TwoFactor />
+    <AppShell agencyId={me.data?.agencies[0]?.id}>
+      <PageHeader title="Security" description="How you sign in to your account." />
+      <div className="max-w-xl">
+        <TwoFactor />
+      </div>
     </AppShell>
   );
 }

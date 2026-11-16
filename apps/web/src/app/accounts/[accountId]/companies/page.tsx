@@ -3,12 +3,12 @@
 import { createCompanyInput, type CreateCompanyInput } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { Building2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { AppShell } from "@/components/app-shell";
-import { Button, Card, Empty, Field, FormError, QuietButton } from "@/components/ui";
+import { Button, Card, Empty, Field, FormError, PageHeader, QuietButton } from "@/components/ui";
 import { client } from "@/lib/api";
 import { keys, useAccount, useCompanies } from "@/lib/queries";
 
@@ -43,10 +43,7 @@ export default function CompaniesPage() {
 
   return (
     <AppShell agencyId={account.data?.agencyId} accountId={accountId}>
-      <p className="mb-2 text-sm">
-        <Link className="text-brand underline" href={`/accounts/${accountId}`}>← Contacts</Link>
-      </p>
-      <h1 className="mb-6 text-2xl font-semibold">Companies</h1>
+      <PageHeader title="Companies" description="The businesses this client's contacts work for." />
       <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <Card>
           {companies.isPending ? (
@@ -54,7 +51,7 @@ export default function CompaniesPage() {
           ) : companies.isError ? (
             <FormError>{companies.error.message}</FormError>
           ) : companies.data.items.length === 0 ? (
-            <Empty>No companies yet. Add the first one using the form.</Empty>
+            <Empty icon={Building2} title="No companies yet">Add the first one using the form, then link contacts to it.</Empty>
           ) : (
             <ul aria-label="Companies" className="divide-y divide-line">
               {companies.data.items.map((company) => (

@@ -31,7 +31,7 @@ export default function SignUp() {
   });
 
   return (
-    <AuthLayout title="Create your account" footer={<>Already have an account? <Link className="text-brand underline" href="/sign-in">Sign in</Link></>}>
+    <AuthLayout title="Create your account" subtitle="Set up your agency in a couple of minutes." footer={<>Already have an account? <Link className="text-brand underline" href="/sign-in">Sign in</Link></>}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field label="Your name" autoComplete="name" error={errors.name?.message} {...form.register("name")} />
         <Field label="Work email" type="email" autoComplete="email" error={errors.email?.message} {...form.register("email")} />

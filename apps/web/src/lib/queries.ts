@@ -17,6 +17,10 @@ export const keys = {
   companies: (accountId: string) => ["account", accountId, "companies"] as const,
   tags: (accountId: string) => ["account", accountId, "tags"] as const,
   customFields: (accountId: string) => ["account", accountId, "custom-fields"] as const,
+  pipelines: (accountId: string) => ["account", accountId, "pipelines"] as const,
+  deals: (accountId: string, pipelineId: string) => ["account", accountId, "pipelines", pipelineId, "deals"] as const,
+  accountSummary: (accountId: string) => ["account", accountId, "summary"] as const,
+  agencySummary: (agencyId: string) => ["agency", agencyId, "summary"] as const,
 };
 
 export const useMe = () =>
@@ -89,4 +93,30 @@ export const useCustomFields = (accountId: string) =>
   useQuery({
     queryKey: keys.customFields(accountId),
     queryFn: async () => (await client.GET("/v1/accounts/{accountId}/custom-fields", { params: { path: { accountId } } })).data!,
+  });
+
+export const usePipelines = (accountId: string) =>
+  useQuery({
+    queryKey: keys.pipelines(accountId),
+    queryFn: async () => (await client.GET("/v1/accounts/{accountId}/pipelines", { params: { path: { accountId } } })).data!,
+  });
+
+export const useDeals = (accountId: string, pipelineId: string | undefined) =>
+  useQuery({
+    queryKey: keys.deals(accountId, pipelineId ?? ""),
+    queryFn: async () =>
+      (await client.GET("/v1/accounts/{accountId}/pipelines/{pipelineId}/deals", { params: { path: { accountId, pipelineId: pipelineId! } } })).data!,
+    enabled: !!pipelineId,
+  });
+
+export const useAccountSummary = (accountId: string) =>
+  useQuery({
+    queryKey: keys.accountSummary(accountId),
+    queryFn: async () => (await client.GET("/v1/accounts/{accountId}/summary", { params: { path: { accountId } } })).data!,
+  });
+
+export const useAgencySummary = (agencyId: string) =>
+  useQuery({
+    queryKey: keys.agencySummary(agencyId),
+    queryFn: async () => (await client.GET("/v1/agencies/{agencyId}/summary", { params: { path: { agencyId } } })).data!,
   });

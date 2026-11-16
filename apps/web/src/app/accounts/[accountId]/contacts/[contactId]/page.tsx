@@ -3,12 +3,11 @@
 import { createNoteInput, type CreateNoteInput, type Contact, type CustomField } from "@aashi/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppShell } from "@/components/app-shell";
-import { Button, Card, Empty, Field, FormError, QuietButton, Select } from "@/components/ui";
+import { Button, Card, Empty, Field, FormError, PageHeader, QuietButton, Select } from "@/components/ui";
 import { ApiError, client, isNotFound } from "@/lib/api";
 import { keys, useAccount, useCompanies, useContact, useCustomFields, useMe, useNotes, useTags } from "@/lib/queries";
 
@@ -26,10 +25,7 @@ export default function ContactPage() {
         <p className="text-sm text-ink-muted">Loading…</p>
       ) : (
         <>
-          <p className="mb-2 text-sm">
-            <Link className="text-brand underline" href={`/accounts/${accountId}`}>← All contacts</Link>
-          </p>
-          <h1 className="mb-6 text-2xl font-semibold">{[contact.data.firstName, contact.data.lastName].filter(Boolean).join(" ")}</h1>
+          <PageHeader eyebrow="Contact" title={[contact.data.firstName, contact.data.lastName].filter(Boolean).join(" ")} />
           <div className="grid gap-6 md:grid-cols-2">
             <div className="flex flex-col gap-6">
               {/* Remounts when the saved contact changes, so the form starts from what is stored. */}
@@ -99,7 +95,10 @@ function Details({ accountId, contact }: { accountId: string; contact: Contact }
         body: { ...values, companyId: values.companyId || null, custom: customBody },
       });
       setSaved(true);
-      await queryClient.invalidateQueries({ queryKey: keys.contacts(accountId) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.contacts(accountId) }),
+        queryClient.invalidateQueries({ queryKey: keys.accountSummary(accountId) }),
+      ]);
     } catch (error) {
       const problem = error instanceof ApiError ? error.problem : undefined;
       const byField = Object.fromEntries((problem?.errors ?? []).map((e) => [e.path, e.message]));
@@ -113,8 +112,11 @@ function Details({ accountId, contact }: { accountId: string; contact: Contact }
   async function remove() {
     if (!window.confirm("Delete this contact, with its notes and tags? This cannot be undone.")) return;
     await client.DELETE("/v1/accounts/{accountId}/contacts/{contactId}", { params: { path: { accountId, contactId: contact.id } } });
-    await queryClient.invalidateQueries({ queryKey: keys.contacts(accountId) });
-    router.push(`/accounts/${accountId}`);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: keys.contacts(accountId) }),
+      queryClient.invalidateQueries({ queryKey: keys.accountSummary(accountId) }),
+    ]);
+    router.push(`/accounts/${accountId}/contacts`);
   }
 
   return (

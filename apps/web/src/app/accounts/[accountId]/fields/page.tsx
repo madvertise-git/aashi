@@ -2,11 +2,11 @@
 
 import type { CustomField } from "@aashi/contracts";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 import { useParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { Button, Card, Empty, Field, FormError, QuietButton, Select } from "@/components/ui";
+import { Button, Card, Empty, Field, FormError, PageHeader, QuietButton, Select } from "@/components/ui";
 import { ApiError, client } from "@/lib/api";
 import { keys, useAccount, useCustomFields, useMe } from "@/lib/queries";
 
@@ -61,11 +61,7 @@ export default function FieldsPage() {
 
   return (
     <AppShell agencyId={account.data?.agencyId} accountId={accountId}>
-      <p className="mb-2 text-sm">
-        <Link className="text-brand underline" href={`/accounts/${accountId}`}>← Contacts</Link>
-      </p>
-      <h1 className="mb-1 text-2xl font-semibold">Custom fields</h1>
-      <p className="mb-6 text-sm text-ink-muted">Extra details this client wants to keep about contacts and companies.</p>
+      <PageHeader title="Custom fields" description="Extra details this client wants to keep about contacts and companies." />
       <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <Card>
           {fields.isPending ? (
@@ -73,7 +69,7 @@ export default function FieldsPage() {
           ) : fields.isError ? (
             <FormError>{fields.error.message}</FormError>
           ) : fields.data.length === 0 ? (
-            <Empty>No custom fields yet.</Empty>
+            <Empty icon={SlidersHorizontal} title="No custom fields yet">Add a field such as “Plan” or “Next visit” and it appears on every contact.</Empty>
           ) : (
             <ul aria-label="Custom fields" className="divide-y divide-line">
               {fields.data.map((field) => (
